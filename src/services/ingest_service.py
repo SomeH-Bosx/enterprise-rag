@@ -1,3 +1,5 @@
+"""入库服务：多格式加载 → 切分 → Embedding → Chroma（+ BM25 索引）。"""
+
 from __future__ import annotations
 
 import hashlib
@@ -49,11 +51,9 @@ class IngestService:
         model_overrides: SessionModelOverrides | dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
-        Unified ingest:
-          detect → [convert legacy] → load → split → embed → vector DB
+        统一入库：detect → [legacy 转换] → load → split → embed → 向量库。
 
-        Optional session embed_model override applies for this upload only
-        (rebinds vector store embedding; does not write .env).
+        可选 session `embed_model` 仅对本上传生效（重绑向量库 Embedding，不写 `.env`）。
         """
         overrides = (
             model_overrides
@@ -92,7 +92,7 @@ class IngestService:
         return result
 
     def bind_session_embed(self, embed_model: str | None) -> dict[str, Any]:
-        """Bind vector-store embedding to a session override (or restore default)."""
+        """按 session 覆盖绑定向量库 Embedding（或恢复默认）。"""
         with self._ingest_lock:
             target = (embed_model or "").strip() or self.settings.embed_model
             if target.lower().startswith("ollama:"):
@@ -111,7 +111,7 @@ class IngestService:
             }
 
     def _ingest_body(self, src: Path, *, doc_id: str | None) -> dict[str, Any]:
-        """Original ingest body (path already validated)."""
+        """原始入库主体（路径已校验）。"""
         cache_dir = Path(self.settings.upload_cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
         cached = cache_dir / src.name
@@ -277,7 +277,7 @@ class IngestService:
         }
 
     def ingest_pdf(self, path: str | Path, doc_id: str | None = None) -> dict[str, Any]:
-        """Backward-compatible alias for ingest_file."""
+        """兼容旧名，等同 ingest_file。"""
         return self.ingest_file(path, doc_id=doc_id)
 
     def delete_document(self, doc_id: str) -> dict[str, Any]:

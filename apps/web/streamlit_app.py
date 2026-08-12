@@ -1,8 +1,8 @@
-"""Enterprise Knowledge Workspace — Streamlit UI.
+"""企业知识工作台 — Streamlit UI。
 
-Layout (Scheme B): Left Sidebar (Knowledge + Models + Answer Trace) | Main Chat
-Scroll: Sidebar and Main use Streamlit native independent scroll areas.
-Elapsed: final seconds only (no background thread UI updates).
+布局（方案 B）：左侧边栏（知识库 + 模型 + Answer Trace）| 主区聊天
+滚动：侧栏与主区使用 Streamlit 原生独立滚动
+耗时：仅展示最终秒数（无后台线程刷 UI）
 """
 
 from __future__ import annotations
@@ -189,15 +189,15 @@ def _fmt_time(iso: str | None) -> str:
 
 
 def _run_with_elapsed(label: str, fn: Callable[[], Any], slot: Any | None = None) -> tuple[Any, float]:
-    """Run blocking work on the main thread; show final elapsed only (Scheme A)."""
+    """在主线程执行阻塞任务；仅展示最终耗时（方案 A）。"""
     box = slot if slot is not None else st.empty()
-    box.caption(f"{label} · running…")
+    box.caption(f"{label} · 进行中…")
     t0 = time.perf_counter()
     try:
         result = fn()
     finally:
         elapsed = time.perf_counter() - t0
-        box.caption(f"{label} · elapsed {elapsed:.1f}s")
+        box.caption(f"{label} · 耗时 {elapsed:.1f}s")
     return result, elapsed
 
 
@@ -230,7 +230,7 @@ def _session_models_payload() -> dict[str, str]:
 
 def _render_chunk_list(items: list[dict[str, Any]], *, limit: int = 8) -> None:
     if not items:
-        st.caption("No chunks.")
+        st.caption("暂无片段。")
         return
     for item in items[:limit]:
         if not isinstance(item, dict):
@@ -245,7 +245,7 @@ def _render_chunk_list(items: list[dict[str, Any]], *, limit: int = 8) -> None:
         elif conf is not None:
             head += f" · chunk conf **{conf}**"
         with st.expander(head, expanded=False):
-            st.caption(item.get("confidence_formula") or "formula n/a")
+            st.caption(item.get("confidence_formula") or "公式不可用")
             st.write(
                 {
                     "retrieval_score": item.get("retrieval_score"),
@@ -257,11 +257,11 @@ def _render_chunk_list(items: list[dict[str, Any]], *, limit: int = 8) -> None:
 
 
 def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
-    st.markdown('<p class="wk-col-title">Answer Trace</p>', unsafe_allow_html=True)
-    st.caption("Observable RAG · scrolls with sidebar (independent from chat)")
+    st.markdown('<p class="wk-col-title">回答轨迹</p>', unsafe_allow_html=True)
+    st.caption("可观测 RAG · 随侧栏滚动（与聊天区独立）")
 
     if not trace_payload:
-        st.info("Ask a question to inspect Router → Retriever → Reranker → LLM.")
+        st.info("提问后可在此查看 Router → Retriever → Reranker → LLM。")
         return
 
     raw = trace_payload.get("trace") if isinstance(trace_payload.get("trace"), dict) else None
@@ -301,14 +301,14 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
     use_hybrid = trace.get("use_hybrid")
     if use_hybrid is None:
         use_hybrid = trace_payload.get("use_hybrid")
-    hybrid_label = "on" if use_hybrid else "off"
+    hybrid_label = "开" if use_hybrid else "关"
     st.markdown(
-        f'<div class="wk-panel"><h4>Query Analysis</h4>'
-        f'<div class="wk-kv">Query Type: <code>{qtype}</code><br/>'
-        f"Route Method: <code>{method}</code><br/>"
-        f"Original: <code>{original_q}</code><br/>"
-        f"Rewritten: <code>{rewritten_q}</code><br/>"
-        f"Rewrite Method: <code>{rewrite_method}</code><br/>"
+        f'<div class="wk-panel"><h4>查询分析</h4>'
+        f'<div class="wk-kv">问题类型: <code>{qtype}</code><br/>'
+        f"路由方式: <code>{method}</code><br/>"
+        f"原问: <code>{original_q}</code><br/>"
+        f"改写问: <code>{rewritten_q}</code><br/>"
+        f"改写方法: <code>{rewrite_method}</code><br/>"
         f"Hybrid (BM25): <code>{hybrid_label}</code></div></div>",
         unsafe_allow_html=True,
     )
@@ -319,8 +319,8 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
     cand = retrieval.get("candidate_count")
     retriever_name = retrieval.get("retriever") or ("Hybrid (Dense + BM25 RRF)" if use_hybrid else "Chroma Dense")
     st.markdown(
-        f'<div class="wk-panel"><h4>Retrieval</h4>'
-        f'<div class="wk-kv">Retriever: <code>{retriever_name}</code><br/>'
+        f'<div class="wk-panel"><h4>检索</h4>'
+        f'<div class="wk-kv">检索器: <code>{retriever_name}</code><br/>'
         f"Top-K = <code>{top_k if top_k is not None else '—'}</code>"
         f"{f' · candidates={cand}' if cand is not None else ''}<br/>"
         f'<span class="wk-muted">{retrieval.get("note") or ""}</span>'
@@ -333,9 +333,9 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
     reranked_items = trace.get("reranked_docs") or reranking.get("items") or []
     selected_n = reranking.get("selected_top_n")
     st.markdown(
-        f'<div class="wk-panel"><h4>Reranking</h4>'
-        f'<div class="wk-kv">Reranker: <code>{reranking.get("reranker") or "—"}</code><br/>'
-        f"Selected: <code>Top{selected_n if selected_n is not None else '—'}</code></div></div>",
+        f'<div class="wk-panel"><h4>重排</h4>'
+        f'<div class="wk-kv">重排器: <code>{reranking.get("reranker") or "—"}</code><br/>'
+        f"选用: <code>Top{selected_n if selected_n is not None else '—'}</code></div></div>",
         unsafe_allow_html=True,
     )
     _render_chunk_list(list(reranked_items), limit=8)
@@ -343,9 +343,9 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
     generation = trace.get("generation") or {}
     llm_label = generation.get("llm") or trace.get("model") or trace_payload.get("model") or "—"
     st.markdown(
-        f'<div class="wk-panel"><h4>Generation</h4>'
+        f'<div class="wk-panel"><h4>生成</h4>'
         f'<div class="wk-kv">LLM: <code>{llm_label}</code><br/>'
-        f"{generation.get('status') or 'Response Generated'}</div></div>",
+        f"{generation.get('status') or '已生成回答'}</div></div>",
         unsafe_allow_html=True,
     )
 
@@ -368,16 +368,16 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
             factor_bits.append(f"{key}={factors.get(key)}")
     factor_line = " · ".join(factor_bits)
     st.markdown(
-        f'<div class="wk-panel"><h4>Confidence</h4>'
+        f'<div class="wk-panel"><h4>置信度</h4>'
         f'<div class="{conf_cls}">{percent if percent is not None else "—"}%</div>'
-        f'<div class="wk-kv">Level: <b>{level}</b><br/>'
+        f'<div class="wk-kv">等级: <b>{level}</b><br/>'
         f'<span class="wk-muted">{factor_line}</span><br/>'
         f'<code style="font-size:0.75rem;white-space:normal;">{formula}</code>'
         f"</div></div>",
         unsafe_allow_html=True,
     )
 
-    with st.expander("Raw trace (safe fields)", expanded=False):
+    with st.expander("原始 Trace（安全字段）", expanded=False):
         st.json(
             {
                 "route": qtype,
@@ -398,7 +398,7 @@ def _render_sidebar() -> None:
     with st.sidebar:
         st.markdown('<div class="wk-brand">Enterprise RAG</div>', unsafe_allow_html=True)
         st.markdown(
-            '<div class="wk-sub">Knowledge Workspace · Observable RAG</div>',
+            '<div class="wk-sub">企业知识工作台 · 可观测 RAG</div>',
             unsafe_allow_html=True,
         )
 
@@ -406,24 +406,24 @@ def _render_sidebar() -> None:
         try:
             health = fetch_health()
             st.session_state["_health"] = health
-            st.success(f"Online · docs={health.get('documents')} · chunks={health.get('chunks')}")
+            st.success(f"在线 · 文档={health.get('documents')} · 片段={health.get('chunks')}")
         except Exception as exc:  # noqa: BLE001
             st.session_state["_health"] = None
-            st.error(f"API unreachable: {exc}")
-            st.info("Start API: `uvicorn apps.api.main:app --host 127.0.0.1 --port 8000`")
+            st.error(f"API 不可达: {exc}")
+            st.info("请先启动 API：`uvicorn apps.api.main:app --host 127.0.0.1 --port 8000`")
 
         st.divider()
-        st.markdown("#### Knowledge Base")
+        st.markdown("#### 知识库")
 
         uploaded_files = st.file_uploader(
-            "Upload documents",
+            "上传文档",
             type=["pdf", "doc", "docx", "ppt", "pptx", "md", "txt"],
             accept_multiple_files=True,
-            help="Multi-format ingest: pdf/doc/docx/ppt/pptx/md/txt",
+            help="支持：pdf/doc/docx/ppt/pptx/md/txt",
             key="kb_uploader",
         )
         elapsed_slot = st.empty()
-        if uploaded_files and st.button("Index selected", type="primary", use_container_width=True):
+        if uploaded_files and st.button("开始入库", type="primary", use_container_width=True):
             ok_n = 0
             fail_rows: list[str] = []
             success_rows: list[dict[str, Any]] = []
@@ -436,8 +436,8 @@ def _render_sidebar() -> None:
                     rows.append({"name": f.name, "result": result})
                 return rows
 
-            with st.spinner("Indexing…"):
-                rows, elapsed = _run_with_elapsed("Indexing", _batch, slot=elapsed_slot)
+            with st.spinner("入库中…"):
+                rows, elapsed = _run_with_elapsed("入库", _batch, slot=elapsed_slot)
             for row in rows:
                 result = row["result"]
                 if result.get("ok"):
@@ -460,8 +460,8 @@ def _render_sidebar() -> None:
         report = st.session_state.get("last_ingest_report")
         if report:
             st.success(
-                f"Indexed {report.get('ok_n')}/{report.get('total')} file(s) "
-                f"in {float(report.get('elapsed') or 0):.1f}s"
+                f"已入库 {report.get('ok_n')}/{report.get('total')} 个文件，"
+                f"耗时 {float(report.get('elapsed') or 0):.1f}s"
             )
             for row in report.get("success_rows") or []:
                 result = row.get("result") or {}
@@ -469,20 +469,20 @@ def _render_sidebar() -> None:
                 steps = result.get("pipeline_steps") or []
                 if conv.get("converted"):
                     st.info(
-                        f"**{row.get('name')}** · convert "
+                        f"**{row.get('name')}** · 转换 "
                         f"`{conv.get('from_type')}→{conv.get('to_type')}` "
-                        f"via `{conv.get('engine')}` · "
+                        f"引擎 `{conv.get('engine')}` · "
                         f"chunks={result.get('chunk_count')}"
                     )
                 with st.expander(
-                    f"Pipeline · {row.get('name')}",
+                    f"流水线 · {row.get('name')}",
                     expanded=bool(conv.get("converted")),
                 ):
                     for step in steps:
                         st.write(step)
             for msg in report.get("fail_rows") or []:
                 st.error(msg)
-            if st.button("Dismiss ingest report", use_container_width=True):
+            if st.button("关闭入库报告", use_container_width=True):
                 st.session_state.pop("last_ingest_report", None)
                 st.rerun()
 
@@ -490,10 +490,10 @@ def _render_sidebar() -> None:
             docs = fetch_documents()
         except Exception as exc:  # noqa: BLE001
             docs = []
-            st.warning(f"Cannot list documents: {exc}")
+            st.warning(f"无法列出文档: {exc}")
 
         if not docs:
-            st.info("No documents yet. Upload files to start.")
+            st.info("暂无文档。请先上传文件。")
         else:
             for d in docs:
                 fname = d.get("filename") or "unknown"
@@ -508,7 +508,7 @@ def _render_sidebar() -> None:
                     f"</div>",
                     unsafe_allow_html=True,
                 )
-                with st.expander(f"Info · {fname[:28]}", expanded=False):
+                with st.expander(f"详情 · {fname[:28]}", expanded=False):
                     st.json(
                         {
                             "filename": d.get("filename"),
@@ -520,16 +520,16 @@ def _render_sidebar() -> None:
                             "source": d.get("source"),
                         }
                     )
-                if st.button("Delete", key=f"del_{doc_id}", use_container_width=True):
+                if st.button("删除", key=f"del_{doc_id}", use_container_width=True):
                     out = delete_document(doc_id)
                     if out.get("ok"):
-                        st.toast(f"Deleted {fname}")
+                        st.toast(f"已删除 {fname}")
                         st.rerun()
                     else:
-                        st.error(out.get("message") or "Delete failed")
+                        st.error(out.get("message") or "删除失败")
 
         st.divider()
-        st.markdown("#### Model Settings")
+        st.markdown("#### 模型设置")
         health = st.session_state.get("_health") or {}
         models = health.get("models") or {}
         defaults = health.get("session_model_defaults") or {
@@ -546,34 +546,34 @@ def _render_sidebar() -> None:
             f"<div><b>LLM</b><br/><code>Ollama:{llm}</code></div><br/>"
             f"<div><b>Embedding</b><br/><code>{embed}</code></div><br/>"
             f"<div><b>Reranker</b><br/><code>{rerank_backend}</code></div><br/>"
-            f'<span class="wk-muted">Bound store embed: <code>{bound_embed}</code> · session-only (not written to .env)</span>'
+            f'<span class="wk-muted">当前向量库 Embedding: <code>{bound_embed}</code> · 仅 session（不写 .env）</span>'
             f"</div></div>",
             unsafe_allow_html=True,
         )
-        with st.expander("Change models (session)", expanded=False):
+        with st.expander("修改模型（当前会话）", expanded=False):
             st.caption(
-                "Edits apply to this browser session only. "
-                "Clear chat keeps overrides; browser refresh restores `.env` defaults. "
-                "Changing Embedding requires re-upload for consistent retrieval. "
-                "API keys stay in `.env` — never entered here."
+                "仅影响当前浏览器会话。"
+                "清空聊天会保留覆盖；刷新页面则恢复 `.env` 默认。"
+                "更改 Embedding 后需重新上传文档以保证检索一致。"
+                "API Key 仍只放在 `.env`，此处不配置密钥。"
             )
-            st.text_input("LLM model", key="session_llm_model")
-            st.text_input("Embedding model", key="session_embed_model")
+            st.text_input("LLM 模型", key="session_llm_model")
+            st.text_input("Embedding 模型", key="session_embed_model")
             st.selectbox(
-                "Reranker backend",
+                "Reranker 后端",
                 options=["dashscope", "lexical", "cross_encoder", "auto"],
                 key="session_reranker_backend",
             )
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("Apply to session", use_container_width=True):
+                if st.button("应用到会话", use_container_width=True):
                     out = apply_session_models(_session_models_payload())
                     if out.get("ok"):
-                        st.toast("Session models applied (not saved to .env)")
+                        st.toast("会话模型已应用（未写入 .env）")
                     else:
-                        st.error(out.get("message") or "Apply failed")
+                        st.error(out.get("message") or "应用失败")
             with c2:
-                if st.button("Reset to .env defaults", use_container_width=True):
+                if st.button("恢复 .env 默认", use_container_width=True):
                     st.session_state.session_llm_model = defaults.get("llm_model") or settings.llm_model
                     st.session_state.session_embed_model = defaults.get("embed_model") or settings.embed_model
                     st.session_state.session_reranker_backend = (
@@ -586,15 +586,15 @@ def _render_sidebar() -> None:
                             "reranker_backend": st.session_state.session_reranker_backend,
                         }
                     )
-                    st.toast("Restored .env defaults for this session")
+                    st.toast("已恢复为本会话的 .env 默认值")
                     st.rerun()
 
-        if st.button("Clear chat", use_container_width=True):
+        if st.button("清空聊天", use_container_width=True):
             st.session_state.messages = []
             st.session_state.latest_trace = None
             st.session_state.pending_query = None
-            st.session_state.conversation_id = None  # new conversation on next ask
-            # Keep session model overrides (Step4 policy)
+            st.session_state.conversation_id = None  # 下次提问开启新会话
+            # 保留 session 模型覆盖（Step4）
             st.rerun()
 
         # Scheme B: Trace lives in sidebar → native independent scroll vs main chat
@@ -603,11 +603,11 @@ def _render_sidebar() -> None:
 
 
 def _render_chat_history() -> None:
-    st.markdown('<p class="wk-col-title">Workspace Chat</p>', unsafe_allow_html=True)
+    st.markdown('<p class="wk-col-title">工作台对话</p>', unsafe_allow_html=True)
     cid = st.session_state.get("conversation_id")
     st.caption(
-        "Multi-turn memory enabled · "
-        + (f"conversation=`{cid[:8]}…`" if cid else "new conversation on first message")
+        "已开启多轮 Memory · "
+        + (f"会话=`{cid[:8]}…`" if cid else "首条消息将创建新会话")
     )
 
     for msg in st.session_state.messages:
@@ -620,7 +620,7 @@ def _render_chat_history() -> None:
                 if meta:
                     st.caption(meta)
                 if sources:
-                    with st.expander(f"Sources ({len(sources)})", expanded=False):
+                    with st.expander(f"引用来源（{len(sources)}）", expanded=False):
                         for i, src in enumerate(sources, start=1):
                             title = src.get("filename") or src.get("doc_id") or f"source-{i}"
                             page = src.get("page")
@@ -639,9 +639,9 @@ def _handle_pending_query() -> None:
     st.session_state.pending_query = None
 
     elapsed_slot = st.empty()
-    with st.spinner("Router → Retriever → Reranker → LLM …"):
+    with st.spinner("路由 → 检索 → 重排 → 生成 …"):
         data, elapsed = _run_with_elapsed(
-            "Answering",
+            "回答",
             lambda: ask(
                 query,
                 conversation_id=st.session_state.get("conversation_id"),
@@ -651,8 +651,8 @@ def _handle_pending_query() -> None:
         )
 
     if not data.get("ok"):
-        err = data.get("message") or "Chat failed"
-        st.session_state.messages.append({"role": "assistant", "content": f"Error: {err}"})
+        err = data.get("message") or "对话失败"
+        st.session_state.messages.append({"role": "assistant", "content": f"错误: {err}"})
         st.session_state.latest_trace = None
         st.rerun()
         return
@@ -689,7 +689,7 @@ def _handle_pending_query() -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="Enterprise Knowledge Workspace",
+        page_title="企业知识工作台",
         page_icon="📚",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -703,7 +703,7 @@ def main() -> None:
     if st.session_state.pending_query:
         _handle_pending_query()
 
-    prompt = st.chat_input("Ask about your knowledge base…")
+    prompt = st.chat_input("询问你的知识库…")
     if prompt and prompt.strip():
         query = prompt.strip()
         st.session_state.messages.append({"role": "user", "content": query})

@@ -1,9 +1,8 @@
-"""DOCX / legacy DOC loaders.
+"""DOCX / legacy DOC Loader。
 
-Legacy .doc is converted to .docx first (explicit Office/LibreOffice step),
-then parsed with python-docx.
+Legacy `.doc` 先转为 `.docx`（显式 Office/LibreOffice），再用 python-docx 解析。
 
-Step3.6: tables serialized as Markdown when ENABLE_TABLE_SERIALIZATION=true.
+Step3.6：`ENABLE_TABLE_SERIALIZATION=true` 时表格输出为 Markdown。
 """
 
 from __future__ import annotations

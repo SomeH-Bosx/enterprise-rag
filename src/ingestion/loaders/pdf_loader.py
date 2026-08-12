@@ -1,7 +1,7 @@
-"""PDF loader with Markdown table serialization + optional OCR (Step3.6).
+"""PDF Loader：Markdown 表序列化 + 可选 OCR（Step3.6）。
 
-Keeps the same `load_pdf(path) -> list[Document]` contract.
-Uses pdfplumber directly (still the Phase1 PDF engine family).
+保持 `load_pdf(path) -> list[Document]` 契约。
+直接使用 pdfplumber（仍属 Phase1 PDF 引擎族）。
 """
 
 from __future__ import annotations

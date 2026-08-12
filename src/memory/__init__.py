@@ -1,4 +1,4 @@
-"""Conversation memory package (Step3)."""
+"""对话 Memory 包（Step3）。"""
 
 from src.memory.store import (
     Conversation,

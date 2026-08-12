@@ -1,7 +1,7 @@
-"""Optional OCR via pytesseract + system Tesseract (Step3.6, engine A).
+"""可选 OCR：pytesseract + 系统 Tesseract（Step3.6，引擎 A）。
 
-Default on (`ENABLE_OCR=true`). If pytesseract / Tesseract / Pillow are missing,
-callers should skip and log — never hard-fail ingest.
+默认开启（`ENABLE_OCR=true`）。缺 pytesseract / Tesseract / Pillow 时，
+调用方应跳过并打日志——入库不得因此硬失败。
 """
 
 from __future__ import annotations

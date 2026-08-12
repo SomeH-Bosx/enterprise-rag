@@ -1,11 +1,11 @@
-"""Conversation Memory — turn store + bounded history window.
+"""Conversation Memory — 轮次存储 + 有界历史窗口。
 
-Strategy (Step3):
-- Persist messages per conversation_id (JSON file store).
-- Never dump full history into the prompt.
-- Window by max turns (user/assistant pairs) AND approx char budget.
-- Retrieval uses a light memory-aware query (current + recent user turns),
-  not an LLM query-rewrite (that is Step3.5).
+策略（Step3）：
+- 按 conversation_id 持久化消息（JSON 文件存储）。
+- 不把完整历史整段塞进 Prompt。
+- 按最大轮次（user/assistant 对）与近似字符预算截窗。
+- 检索侧用轻量记忆感知查询（当前问 + 近期用户轮），
+  不做 LLM 查询改写（改写属 Step3.5）。
 """
 
 from __future__ import annotations

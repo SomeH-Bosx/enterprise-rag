@@ -1,7 +1,6 @@
-"""Table serialization helpers — emit Markdown tables for RAG-friendly text.
+"""表格序列化：输出 Markdown 表，便于 RAG 文本检索。
 
-Step3.6 extension: used by PDF / DOCX / PPTX loaders without changing the
-Loader registry architecture.
+Step3.6 扩展：供 PDF / DOCX / PPTX loader 使用，不改 Loader 注册架构。
 """
 
 from __future__ import annotations

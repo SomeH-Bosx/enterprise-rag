@@ -1,15 +1,15 @@
-"""Unified multi-format Document Loader facade.
+"""统一多格式 Document Loader 门面。
 
-Architecture:
-  File Upload
-    → Type Detection
-    → [Convert legacy .ppt/.doc → .pptx/.docx]  (explicit Office/LibreOffice step)
-    → Format Loader
+架构：
+  上传文件
+    → 类型检测
+    → [转换 legacy .ppt/.doc → .pptx/.docx]（显式 Office/LibreOffice）
+    → 格式 Loader
     → Document[]
-    → Splitter → Embed → Vector DB
+    → Splitter → Embed → 向量库
 
-Supported today: pdf, doc, docx, ppt, pptx, md, txt
-Extension point: register another suffix in LOADER_REGISTRY (e.g. xlsx, html).
+当前支持：pdf, doc, docx, ppt, pptx, md, txt
+扩展点：在 LOADER_REGISTRY 注册新后缀（如 xlsx, html）。
 """
 
 from __future__ import annotations

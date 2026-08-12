@@ -599,14 +599,14 @@ FastAPI
 状态：
 完成（Step1–Step4 均完成）
 
-**路线前瞻（未开始）：**
+**路线前瞻：**
 
 | Phase | 内容 | 状态 |
 | --- | --- | --- |
-| **Phase5** | Evaluation（Recall / RAGAS / 测试集） | **未开始 ← 下一个** |
-| **Phase6** | DashScope 云 LLM + 云 Embedding + Session API Key（Clear chat 保留 Key） | 未开始 |
+| **Phase5** | Evaluation（Recall / RAGAS-style / 测试集） | **完成** |
+| **Phase6** | DashScope 云 LLM + 云 Embedding + Session API Key（Clear chat 保留 Key） | **未开始 ← 下一个** |
 
-详见 [`development_plan.md`](development_plan.md) 中 Phase 5 / Phase 6 章节。
+详见 [`development_plan.md`](development_plan.md) · 评测操作：[`eval.md`](eval.md)
 
 
 ### 阶段拆分（已确认）
@@ -996,4 +996,51 @@ Current Query (+ Memory)
 
 下一阶段：
 
-**等待指令** — Phase5 Evaluation（其后 Phase6：DashScope 云模型 + Session Key）
+**等待指令** — Phase6 DashScope 云模型 + Session Key（或先做展示优化）
+
+---
+
+### Phase5：Evaluation
+
+状态：完成
+
+
+实现：
+
+- 典型题集扩写：`data/eval/questions.json`（含 ground_truth / must_include，中英题）
+- Recall@K：`src/eval/recall.py`
+- RAGAS-style：`src/eval/ragas_lite.py`（faithfulness / answer_relevancy / context_precision）
+- 统一 runner：`src/eval/runner.py` → Markdown + JSON 报告
+- CLI：`python -m apps.cli.main eval`（`--skip-generation` 可只测召回）
+- 操作说明：`docs/eval.md`
+
+
+#### 测试
+
+- `pytest tests/test_phase5_eval.py`（指标单测）
+
+
+下一阶段：
+
+**Phase6 = Future Work**（云 LLM/Embed + Session Key，秋招冲刺不强制）
+
+---
+
+### 文档 / 注释中文化（展示优化）
+
+状态：完成
+
+
+实现：
+
+- **A 文档**：`docs/` 面向人的说明以中文为主（含 demo / ADR / eval / docker；消融报告章节标题中文化）
+- **B README**：保持双语；中英区对齐现状（Step4 + Phase5 完成，Phase6=Future Work，Recall@5≈91.7%）
+- **C 关键 docstring**：`src/services`、`src/eval`、`session_models`、`query_rewrite`、`ingestion`、`memory`、`router`、`generation/trace`、`apps/api`、`apps/cli`、`apps/web`
+- **D UI**：Streamlit 侧栏 / 按钮 / Trace 面板文案中文化
+- 评测报告 Markdown 模板改为中文（下次跑 `eval` 生效）
+- **未改**：标识符、测试名、`.env`、业务行为；git 由用户自行处理
+
+
+下一阶段：
+
+**等待指令**

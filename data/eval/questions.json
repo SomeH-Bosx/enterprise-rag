@@ -1,45 +1,89 @@
 [
   {
+    "id": "acme-annual-leave",
     "question": "How many annual leave days do ACME full-time employees get?",
     "expected_filename": "acme_employee_handbook.pdf",
-    "expected_page_hint": 0
+    "expected_page_hint": 0,
+    "ground_truth": "ACME full-time employees get 15 days of annual leave.",
+    "must_include": ["15"]
   },
   {
+    "id": "acme-remote",
     "question": "According to acme_employee_handbook, how many remote work days are allowed per week?",
     "expected_filename": "acme_employee_handbook.pdf",
-    "expected_page_hint": 0
+    "expected_page_hint": 0,
+    "ground_truth": "Remote work is allowed up to 2 days per week.",
+    "must_include": ["2"]
   },
   {
+    "id": "acme-expense",
     "question": "What is the expense claim deadline in the ACME handbook?",
-    "expected_filename": "acme_employee_handbook.pdf"
+    "expected_filename": "acme_employee_handbook.pdf",
+    "ground_truth": "Expense claims must be submitted within 30 days.",
+    "must_include": ["30"]
   },
   {
+    "id": "beta-product-name",
     "question": "What is the product name in beta_product_spec?",
     "expected_filename": "beta_product_spec.pdf",
-    "expected_page_hint": 0
+    "expected_page_hint": 0,
+    "ground_truth": "Nebula Search Appliance",
+    "must_include": ["Nebula"]
   },
   {
+    "id": "beta-p95",
     "question": "What is the p95 latency SLO for Nebula Search Appliance?",
-    "expected_filename": "beta_product_spec.pdf"
+    "expected_filename": "beta_product_spec.pdf",
+    "ground_truth": "p95 query latency under 200 milliseconds",
+    "must_include": ["200"]
   },
   {
+    "id": "beta-connectors",
     "question": "Which connectors does the Beta product support?",
-    "expected_filename": "beta_product_spec.pdf"
+    "expected_filename": "beta_product_spec.pdf",
+    "ground_truth": "PDF, Markdown, Confluence",
+    "must_include": ["Confluence"]
   },
   {
+    "id": "acme-paid-leave",
     "question": "Does the ACME handbook mention paid leave policy?",
-    "expected_filename": "acme_employee_handbook.pdf"
+    "expected_filename": "acme_employee_handbook.pdf",
+    "ground_truth": "Yes, the handbook describes paid leave / annual leave policy.",
+    "must_include": ["leave"]
   },
   {
+    "id": "beta-confluence",
     "question": "In beta_product_spec, is Confluence a supported connector?",
-    "expected_filename": "beta_product_spec.pdf"
+    "expected_filename": "beta_product_spec.pdf",
+    "ground_truth": "Yes, Confluence is a supported connector.",
+    "must_include": ["Confluence"]
   },
   {
+    "id": "acme-remote-rule",
     "question": "What remote work rule is described for ACME employees?",
-    "expected_filename": "acme_employee_handbook.pdf"
+    "expected_filename": "acme_employee_handbook.pdf",
+    "ground_truth": "Up to 2 remote work days per week.",
+    "must_include": ["2"]
   },
   {
+    "id": "beta-latency-target",
     "question": "What latency target is defined in the Beta product specification?",
-    "expected_filename": "beta_product_spec.pdf"
+    "expected_filename": "beta_product_spec.pdf",
+    "ground_truth": "p95 under 200 milliseconds",
+    "must_include": ["200"]
+  },
+  {
+    "id": "acme-leave-zh",
+    "question": "公司的年假政策是什么？全职员工有多少天年假？",
+    "expected_filename": "acme_employee_handbook.pdf",
+    "ground_truth": "全职员工年假 15 天",
+    "must_include": ["15"]
+  },
+  {
+    "id": "beta-slo-zh",
+    "question": "Nebula Search Appliance 的 p95 延迟 SLO 是多少？",
+    "expected_filename": "beta_product_spec.pdf",
+    "ground_truth": "p95 低于 200 milliseconds",
+    "must_include": ["200"]
   }
 ]

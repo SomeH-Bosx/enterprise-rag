@@ -1,8 +1,10 @@
-# Retrieval Ablation (Phase2 Reranker)
+# 检索消融对比（Phase2 Reranker）
 
-Question: **What is the p95 latency SLO for Nebula Search Appliance?**
+> 说明：正文 JSON 为历史跑批结果；章节标题已中文化。重新跑 `python -m apps.cli.main compare "..."` 可覆盖本文件。
 
-## Baseline: Dense Top-K (no rerank)
+问题: **What is the p95 latency SLO for Nebula Search Appliance?**
+
+## 基线：仅 Dense Top-K（无重排）
 
 ```json
 {
@@ -62,7 +64,7 @@ Question: **What is the p95 latency SLO for Nebula Search Appliance?**
 }
 ```
 
-## Dense Recall + CrossEncoder Rerank → Top-N
+## Dense 宽召回 + 重排 → Top-N
 
 ```json
 {

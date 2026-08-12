@@ -1,3 +1,8 @@
+"""问答服务：路由 →（改写）检索/重排 → 生成 → Trace / Memory。
+
+编排入口：`ask()`。Session 模型覆盖（Step4）仅内存生效，不写 `.env`。
+"""
+
 from __future__ import annotations
 
 import threading
@@ -63,7 +68,7 @@ class QAService:
             raise NoIndexError()
 
     def retrieve_dense(self, question: str, k: int | None = None) -> list[Document]:
-        """Phase1/Phase2 shared vector recall. Does not change VectorStore core."""
+        """Phase1/2 共用的向量召回；不改 VectorStore 核心实现。"""
         return naive_dense_only(
             question,
             self.vector_store,
@@ -72,10 +77,7 @@ class QAService:
         )
 
     def retrieve_candidates(self, question: str, k: int | None = None) -> list[Document]:
-        """
-        Wide recall for knowledge path.
-        Dense by default; Dense+BM25 RRF when USE_BM25=true (Step3.5, default off).
-        """
+        """知识路径的宽召回。默认 Dense；`USE_BM25=true` 时 Dense+BM25 RRF（Step3.5，默认关）。"""
         recall = self.settings.top_k if k is None else k
         use_hybrid = bool(self.settings.use_bm25)
         if use_hybrid:
@@ -96,7 +98,7 @@ class QAService:
         )
 
     def retrieve_dense_scored(self, question: str, k: int | None = None) -> list[Document]:
-        """Dense recall with retrieval_score attached for Answer Trace / Confidence."""
+        """Dense 召回，并为 Answer Trace / Confidence 附带 retrieval_score。"""
         return dense_with_scores(
             question,
             self.vector_store,
@@ -111,10 +113,7 @@ class QAService:
         recall_k: int | None = None,
         top_n: int | None = None,
     ) -> tuple[list[Document], dict[str, Any]]:
-        """
-        Phase 2 / Step3.5 pipeline:
-        Dense[/Hybrid] recall (Top-K / recall_top_n) -> Reranker -> Top-N (top_k)
-        """
+        """Phase2 / Step3.5：Dense[/Hybrid] 宽召回 → Reranker → Top-N（top_k）。"""
         recall = recall_k if recall_k is not None else self.settings.recall_top_n
         final_n = top_n if top_n is not None else self.settings.top_k
         use_hybrid = bool(self.settings.use_bm25)
@@ -167,11 +166,7 @@ class QAService:
         use_reranker: bool | None = None,
         naive: bool = False,
     ) -> tuple[list[Document], dict[str, Any]]:
-        """
-        Public retrieve API.
-        - naive / Phase1: dense Top-K only
-        - Phase2/Step3.5: dense[/hybrid] recall -> rerank -> Top-N
-        """
+        """对外检索 API。naive/Phase1=仅 Dense Top-K；Phase2/Step3.5=宽召回→重排→Top-N。"""
         enable_rerank = self.settings.use_reranker if use_reranker is None else use_reranker
         use_hybrid = bool(self.settings.use_bm25)
         if naive or not enable_rerank:
@@ -268,7 +263,7 @@ class QAService:
         history_text: str = "",
         rewrite: RewriteResult | None = None,
     ) -> ChatAnswer | dict[str, Any]:
-        """Phase3 casual_chat: skip retriever/reranker, answer with LLM directly."""
+        """Phase3 闲聊：跳过检索/重排，直接用 LLM 回答。"""
         t0 = time.perf_counter()
         prompt = build_casual_prompt(question, history=history_text)
         text = invoke_text(prompt, self.settings)
@@ -333,10 +328,7 @@ class QAService:
         conversation_id: str | None = None,
         model_overrides: SessionModelOverrides | dict[str, Any] | None = None,
     ) -> ChatAnswer | dict[str, Any]:
-        """
-        Ask with Query Router + optional Memory + Query Rewrite (Step3.5)
-        + optional session model overrides (Step4; not persisted to .env).
-        """
+        """问答入口：Router + 可选 Memory / Query Rewrite（Step3.5）+ Session 模型覆盖（Step4，不落盘）。"""
         overrides = (
             model_overrides
             if isinstance(model_overrides, SessionModelOverrides)
@@ -406,9 +398,9 @@ class QAService:
         conversation_id: str | None = None,
     ) -> ChatAnswer | dict[str, Any]:
         """
-        Ask with Query Router + optional Memory + Query Rewrite (Step3.5):
-        - knowledge_query → Rewrite → Dense[/Hybrid] → Rerank → Prompt(原问) → LLM
-        - casual_chat → LLM directly (history in prompt; no retrieval rewrite)
+        实现：Router + 可选 Memory / Query Rewrite（Step3.5）
+        - knowledge_query → 改写 → Dense[/Hybrid] → 重排 → Prompt(原问) → LLM
+        - casual_chat → 直接 LLM（Prompt 可带历史；不做检索改写）
         """
         started = time.perf_counter()
         q = (question or "").strip()
@@ -600,7 +592,7 @@ class QAService:
         return result
 
     def compare_rerank(self, question: str) -> dict[str, Any]:
-        """Ablation helper: dense-only Top-K vs dense-recall + rerank Top-N."""
+        """消融对比：仅 Dense Top-K vs 宽召回 + 重排 Top-N。"""
         self._ensure_index()
         baseline_docs, baseline_meta = self.retrieve(question, use_reranker=False, naive=True)
         rerank_docs, rerank_meta = self.retrieve_with_rerank(question)

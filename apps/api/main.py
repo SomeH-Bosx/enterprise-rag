@@ -1,3 +1,8 @@
+"""Enterprise RAG FastAPI 入口（产品 API）。
+
+提供上传、问答、健康检查、Session 模型配置等 HTTP 边界；业务逻辑在 `src/services`。
+"""
+
 from __future__ import annotations
 
 import shutil
@@ -40,7 +45,7 @@ logger = get_logger("api")
 app = FastAPI(
     title="Enterprise RAG API",
     version="1.1.0",
-    description="Phase4 product API: upload PDF, chat with sources, health.",
+    description="产品 API：多格式上传、带引用来源的问答、健康检查、Session 模型配置。",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -60,7 +65,7 @@ qa_service = QAService(
 
 
 class ChatRequest(BaseModel):
-    """Accepts Phase4 `query` or legacy `question`; optional conversation_id for memory."""
+    """接受 Phase4 的 `query` 或旧字段 `question`；可选 `conversation_id` 启用 Memory。"""
 
     query: str | None = Field(default=None, min_length=1)
     question: str | None = Field(default=None, min_length=1)

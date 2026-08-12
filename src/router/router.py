@@ -1,4 +1,4 @@
-"""Independent Query Router entrypoint (Phase3)."""
+"""独立 Query Router 入口（Phase3）。"""
 
 from __future__ import annotations
 

@@ -221,8 +221,19 @@ Router
 增加：
 
 - Recall测试
-- RAGAS评估
-- 典型问题测试集
+- RAGAS评估（本仓库：RAGAS-style 轻量指标，见 `src/eval/ragas_lite.py`）
+- 典型问题测试集（`data/eval/questions.json`）
+
+## 如何运行
+
+见 [`docs/eval.md`](eval.md)。
+
+```bash
+python -m apps.cli.main ingest-dir data/samples
+python -m apps.cli.main eval
+```
+
+报告输出：`evaluation/phase5_report.md` / `evaluation/phase5_report.json`
 
 
 ---
@@ -277,8 +288,8 @@ Router
 # Phase4 Enhancement — 续作路线图（未完成 Steps）
 
 > 对照进度：[`progress.md`](progress.md)  
-> 主线 Phase1–Phase4 与 Enhancement Step1–Step4 已完成。  
-> **下一个主线工作：Phase5 Evaluation**；其后为 **Phase6（云模型 + Session Key）**。  
+> 主线 Phase1–Phase4 与 Enhancement Step1–Step4 已完成；**Phase5 Evaluation 已完成**。  
+> **Phase6（云模型 + Session Key）= Future Work**（秋招冲刺不强制）。  
 > 规则：一次只做一个 Step/Phase 切片；完成后停止，等待用户下一步指令。
 
 ## 当前进度快照
@@ -286,8 +297,8 @@ Router
 | Step / Phase | 内容 | 状态 |
 | --- | --- | --- |
 | Step1–Step4 | Enhancement（UI/Loader/Memory/Rewrite/Hybrid/OCR/Session 本地模型） | **完成** |
-| **Phase5** | Evaluation（Recall / RAGAS / 测试集） | **未开始 ← 下一个** |
-| Phase6 | DashScope 云 LLM + 云 Embedding + Session API Key | 未开始 |
+| Phase5 | Evaluation（Recall / RAGAS-style / 测试集） | **完成** |
+| Phase6 | DashScope 云 LLM + 云 Embedding + Session API Key | **Future Work** |
 
 **禁止越界：** 不实现 Agent / Multi-Agent / Web Search / SQL Agent / 知识图谱（除非用户明确要求）。
 

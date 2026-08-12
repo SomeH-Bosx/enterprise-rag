@@ -1,7 +1,6 @@
-"""Session-scoped model overrides (Step4).
+"""Session 级模型覆盖（Step4）。
 
-Defaults still come from `.env` / Settings. Overrides never write back to disk
-and must not carry API keys.
+默认仍来自 `.env` / Settings；覆盖不回写磁盘，且不得携带 API Key。
 """
 
 from __future__ import annotations
@@ -41,7 +40,7 @@ class SessionModelOverrides:
         return bool(self.llm_model or self.embed_model or self.reranker_backend)
 
     def apply(self, base: Settings) -> Settings:
-        """Return a copy of Settings with non-empty overrides applied."""
+        """返回应用非空覆盖后的 Settings 副本。"""
         updates: dict[str, Any] = {}
         if self.llm_model:
             updates["llm_model"] = self.llm_model
@@ -54,7 +53,7 @@ class SessionModelOverrides:
         return base.model_copy(update=updates)
 
     def to_public_dict(self, effective: Settings | None = None) -> dict[str, Any]:
-        """Safe fields for API/UI (no secrets)."""
+        """供 API/UI 使用的安全字段（不含密钥）。"""
         payload = {
             "llm_model": self.llm_model,
             "embed_model": self.embed_model,

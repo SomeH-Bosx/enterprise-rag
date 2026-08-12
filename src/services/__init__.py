@@ -1,1 +1,1 @@
-"""Service layer. Import concrete classes from submodules to avoid circular imports."""
+"""服务层。请从子模块导入具体类，避免循环依赖。"""
