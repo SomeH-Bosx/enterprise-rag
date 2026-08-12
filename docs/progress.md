@@ -597,7 +597,16 @@ FastAPI
 ## Phase4 Enhancement
 
 状态：
-进行中（Step1–Step3.6 完成，等待 Step4 指令）
+完成（Step1–Step4 均完成）
+
+**路线前瞻（未开始）：**
+
+| Phase | 内容 | 状态 |
+| --- | --- | --- |
+| **Phase5** | Evaluation（Recall / RAGAS / 测试集） | **未开始 ← 下一个** |
+| **Phase6** | DashScope 云 LLM + 云 Embedding + Session API Key（Clear chat 保留 Key） | 未开始 |
+
+详见 [`development_plan.md`](development_plan.md) 中 Phase 5 / Phase 6 章节。
 
 
 ### 阶段拆分（已确认）
@@ -609,7 +618,7 @@ FastAPI
 | **Step3** | Conversation Memory | **完成** |
 | **Step3.5** | Query Rewrite / Hybrid（换问法鲁棒性） | **完成** |
 | **Step3.6** | 表格序列化 + OCR（解析增强） | **完成** |
-| **Step4** | Session 模型配置管理 | 未开始 |
+| **Step4** | Session 模型配置管理 | **完成** |
 
 说明：Query Rewrite / Hybrid 作为独立 Step，插在 Memory 之后、表格/OCR 之前。
 
@@ -638,7 +647,7 @@ FastAPI
 | Conversation Memory | **完成（Step3）** | conversation_id + 窗口截断 + UI 续聊 |
 | Query Rewrite / Hybrid | **完成（Step3.5）** | Rewrite 检索用；Hybrid 默认关 |
 | Table serialization + OCR | **完成（Step3.6）** | Markdown 表；OCR=tesseract 默认开 |
-| Model Configuration | 未开始 | Step4 |
+| Model Configuration | **完成（Step4）** | Session 覆盖；不写回 .env |
 
 
 ### Step1：UI Workspace + Trace Panel
@@ -952,4 +961,39 @@ Current Query (+ Memory)
 
 下一阶段：
 
-**等待指令** — Step4 Session 模型配置管理
+（历史记录）其后已完成 Step4；当前下一个为 **Phase5 Evaluation**，再后 **Phase6**
+
+---
+
+### Step4：Session 模型配置管理
+
+状态：完成
+
+
+实现：
+
+- `src/config/session_models.py`：Session 覆盖（LLM / Embedding / Reranker backend）；不写 `.env`；不含 Key
+- `/chat` 接受 `llm_model` / `embed_model` / `reranker_backend`（或 `session_models`）
+- `/session/models` GET/POST：读默认值、绑定 session embed
+- `/upload` 可带 `embed_model` query
+- Streamlit：可编辑模型；Apply / Reset；**Clear chat 保留覆盖**；浏览器刷新回 `.env` 默认
+- Embedding 变更需重新上传文档才一致（UI 已提示）
+
+
+#### Clear / Refresh 策略（本 Step 确认）
+
+| 动作 | 模型覆盖 | 对话 Memory |
+| --- | --- | --- |
+| Clear chat | **保留** | 新 conversation_id |
+| Reset to .env defaults | 清除覆盖 | 不变 |
+| 浏览器刷新 | 丢失（回 `.env`） | 丢失 UI 会话 |
+
+
+#### 测试
+
+- `pytest tests/test_session_models.py tests/test_api_phase4.py tests/test_conversation_memory.py` → **14 passed**
+
+
+下一阶段：
+
+**等待指令** — Phase5 Evaluation（其后 Phase6：DashScope 云模型 + Session Key）

@@ -20,7 +20,10 @@ class VectorStoreManager:
             self._store = Chroma(
                 collection_name=self.settings.collection_name,
                 persist_directory=self.settings.vector_db_path,
-                embedding_function=get_embeddings(),
+                embedding_function=get_embeddings(
+                    base_url=self.settings.ollama_base_url,
+                    model=self.settings.embed_model,
+                ),
             )
         return self._store
 

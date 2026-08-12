@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import threading
 import time
 from typing import Any
 
 from langchain_core.documents import Document
 
 from src.config.logging import get_logger
+from src.config.session_models import SessionModelOverrides
 from src.config.settings import Settings, get_settings
 from src.generation.llm_gateway import invoke_chat, invoke_text
 from src.generation.postprocess import build_chat_answer, docs_to_citations
@@ -54,6 +56,7 @@ class QAService:
         self.query_router = query_router or QueryRouter(self.settings)
         self.conversation_store = conversation_store or ConversationStore(self.settings)
         self.query_rewriter = query_rewriter or QueryRewriter(self.settings)
+        self._ask_lock = threading.RLock()
 
     def _ensure_index(self) -> None:
         if self.registry.count() == 0 or self.vector_store.count() == 0:
@@ -324,6 +327,79 @@ class QAService:
         return payload
 
     def ask(
+        self,
+        question: str,
+        structured: bool = False,
+        conversation_id: str | None = None,
+        model_overrides: SessionModelOverrides | dict[str, Any] | None = None,
+    ) -> ChatAnswer | dict[str, Any]:
+        """
+        Ask with Query Router + optional Memory + Query Rewrite (Step3.5)
+        + optional session model overrides (Step4; not persisted to .env).
+        """
+        overrides = (
+            model_overrides
+            if isinstance(model_overrides, SessionModelOverrides)
+            else SessionModelOverrides.from_mapping(model_overrides)
+        )
+        with self._ask_lock:
+            return self._ask_with_optional_overrides(
+                question,
+                structured=structured,
+                conversation_id=conversation_id,
+                overrides=overrides,
+            )
+
+    def _ask_with_optional_overrides(
+        self,
+        question: str,
+        *,
+        structured: bool,
+        conversation_id: str | None,
+        overrides: SessionModelOverrides,
+    ) -> ChatAnswer | dict[str, Any]:
+        base_settings = self.settings
+        base_reranker = self.reranker
+        base_router = self.query_router
+        base_rewriter = self.query_rewriter
+        effective = overrides.apply(base_settings)
+        swapped = effective is not base_settings
+        if swapped:
+            self.settings = effective
+            self.reranker = CrossEncoderReranker(effective)
+            self.query_router = QueryRouter(effective)
+            self.query_rewriter = QueryRewriter(effective)
+            if overrides.embed_model and overrides.embed_model != base_settings.embed_model:
+                # Query embedding follows store binding; flag for clients.
+                logger.info(
+                    "session_embed_override_noted",
+                    session_embed=overrides.embed_model,
+                    store_embed=base_settings.embed_model,
+                    note="chat retrieval uses vector store embedding; re-upload after embed change",
+                )
+            logger.info(
+                "session_models_applied",
+                llm_model=effective.llm_model,
+                embed_model=effective.embed_model,
+                reranker_backend=effective.reranker_backend,
+            )
+        try:
+            result = self._ask_impl(
+                question,
+                structured=structured,
+                conversation_id=conversation_id,
+            )
+            if isinstance(result, dict):
+                result["session_models"] = overrides.to_public_dict(effective)
+            return result
+        finally:
+            if swapped:
+                self.settings = base_settings
+                self.reranker = base_reranker
+                self.query_router = base_router
+                self.query_rewriter = base_rewriter
+
+    def _ask_impl(
         self,
         question: str,
         structured: bool = False,

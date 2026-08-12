@@ -97,7 +97,13 @@ def fetch_documents() -> list[dict]:
         return resp.json().get("documents") or []
 
 
-def upload_file(file_name: str, raw: bytes, mime: str | None = None) -> dict:
+def upload_file(
+    file_name: str,
+    raw: bytes,
+    mime: str | None = None,
+    *,
+    embed_model: str | None = None,
+) -> dict:
     suffix = Path(file_name).suffix.lower()
     mime_map = {
         ".pdf": "application/pdf",
@@ -109,8 +115,15 @@ def upload_file(file_name: str, raw: bytes, mime: str | None = None) -> dict:
         ".txt": "text/plain",
     }
     content_type = mime or mime_map.get(suffix, "application/octet-stream")
+    params: dict[str, str] = {}
+    if embed_model:
+        params["embed_model"] = embed_model
     with _client() as client:
-        resp = client.post("/upload", files={"file": (file_name, raw, content_type)})
+        resp = client.post(
+            "/upload",
+            files={"file": (file_name, raw, content_type)},
+            params=params or None,
+        )
     if resp.status_code >= 400:
         try:
             return resp.json()
@@ -129,14 +142,37 @@ def delete_document(doc_id: str) -> dict:
     return data
 
 
-def ask(query: str, conversation_id: str | None = None) -> dict:
+def ask(
+    query: str,
+    conversation_id: str | None = None,
+    *,
+    session_models: dict[str, Any] | None = None,
+) -> dict:
     payload: dict[str, Any] = {"query": query, "structured": False}
     if conversation_id:
         payload["conversation_id"] = conversation_id
+    if session_models:
+        payload["session_models"] = session_models
+        for key in ("llm_model", "embed_model", "reranker_backend"):
+            if session_models.get(key):
+                payload[key] = session_models[key]
     with _client() as client:
         resp = client.post("/chat", json=payload)
     if resp.status_code >= 400:
         return {"ok": False, "message": resp.text}
+    data = resp.json()
+    data["ok"] = True
+    return data
+
+
+def apply_session_models(models: dict[str, Any]) -> dict:
+    with _client() as client:
+        resp = client.post("/session/models", json=models)
+    if resp.status_code >= 400:
+        try:
+            return resp.json()
+        except Exception:  # noqa: BLE001
+            return {"ok": False, "message": resp.text}
     data = resp.json()
     data["ok"] = True
     return data
@@ -174,6 +210,22 @@ def _init_state() -> None:
         st.session_state.pending_query = None
     if "conversation_id" not in st.session_state:
         st.session_state.conversation_id = None
+    if "session_llm_model" not in st.session_state:
+        st.session_state.session_llm_model = settings.llm_model
+    if "session_embed_model" not in st.session_state:
+        st.session_state.session_embed_model = settings.embed_model
+    if "session_reranker_backend" not in st.session_state:
+        st.session_state.session_reranker_backend = settings.reranker_backend
+
+
+def _session_models_payload() -> dict[str, str]:
+    return {
+        "llm_model": str(st.session_state.get("session_llm_model") or settings.llm_model).strip(),
+        "embed_model": str(st.session_state.get("session_embed_model") or settings.embed_model).strip(),
+        "reranker_backend": str(
+            st.session_state.get("session_reranker_backend") or settings.reranker_backend
+        ).strip(),
+    }
 
 
 def _render_chunk_list(items: list[dict[str, Any]], *, limit: int = 8) -> None:
@@ -378,8 +430,9 @@ def _render_sidebar() -> None:
 
             def _batch() -> list[dict[str, Any]]:
                 rows: list[dict[str, Any]] = []
+                embed = st.session_state.get("session_embed_model") or settings.embed_model
                 for f in uploaded_files:
-                    result = upload_file(f.name, f.getvalue())
+                    result = upload_file(f.name, f.getvalue(), embed_model=embed)
                     rows.append({"name": f.name, "result": result})
                 return rows
 
@@ -479,31 +532,69 @@ def _render_sidebar() -> None:
         st.markdown("#### Model Settings")
         health = st.session_state.get("_health") or {}
         models = health.get("models") or {}
-        llm = models.get("llm") or settings.llm_model
-        embed = models.get("embed") or settings.embed_model
-        rerank_backend = models.get("reranker_backend") or settings.reranker_backend
+        defaults = health.get("session_model_defaults") or {
+            "llm_model": settings.llm_model,
+            "embed_model": settings.embed_model,
+            "reranker_backend": settings.reranker_backend,
+        }
+        llm = st.session_state.session_llm_model
+        embed = st.session_state.session_embed_model
+        rerank_backend = st.session_state.session_reranker_backend
+        bound_embed = models.get("bound_embed_model") or embed
         st.markdown(
             f'<div class="wk-panel"><div class="wk-kv">'
             f"<div><b>LLM</b><br/><code>Ollama:{llm}</code></div><br/>"
             f"<div><b>Embedding</b><br/><code>{embed}</code></div><br/>"
-            f"<div><b>Reranker</b><br/><code>{rerank_backend}</code></div>"
+            f"<div><b>Reranker</b><br/><code>{rerank_backend}</code></div><br/>"
+            f'<span class="wk-muted">Bound store embed: <code>{bound_embed}</code> · session-only (not written to .env)</span>'
             f"</div></div>",
             unsafe_allow_html=True,
         )
-        with st.expander("Change models", expanded=False):
+        with st.expander("Change models (session)", expanded=False):
             st.caption(
-                "Session-level override comes later (Model Configuration). "
-                "Values below are from `.env` / Settings (read-only)."
+                "Edits apply to this browser session only. "
+                "Clear chat keeps overrides; browser refresh restores `.env` defaults. "
+                "Changing Embedding requires re-upload for consistent retrieval. "
+                "API keys stay in `.env` — never entered here."
             )
-            st.text_input("LLM", value=f"Ollama:{llm}", disabled=True)
-            st.text_input("Embedding", value=str(embed), disabled=True)
-            st.text_input("Reranker", value=str(rerank_backend), disabled=True)
+            st.text_input("LLM model", key="session_llm_model")
+            st.text_input("Embedding model", key="session_embed_model")
+            st.selectbox(
+                "Reranker backend",
+                options=["dashscope", "lexical", "cross_encoder", "auto"],
+                key="session_reranker_backend",
+            )
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("Apply to session", use_container_width=True):
+                    out = apply_session_models(_session_models_payload())
+                    if out.get("ok"):
+                        st.toast("Session models applied (not saved to .env)")
+                    else:
+                        st.error(out.get("message") or "Apply failed")
+            with c2:
+                if st.button("Reset to .env defaults", use_container_width=True):
+                    st.session_state.session_llm_model = defaults.get("llm_model") or settings.llm_model
+                    st.session_state.session_embed_model = defaults.get("embed_model") or settings.embed_model
+                    st.session_state.session_reranker_backend = (
+                        defaults.get("reranker_backend") or settings.reranker_backend
+                    )
+                    apply_session_models(
+                        {
+                            "llm_model": st.session_state.session_llm_model,
+                            "embed_model": st.session_state.session_embed_model,
+                            "reranker_backend": st.session_state.session_reranker_backend,
+                        }
+                    )
+                    st.toast("Restored .env defaults for this session")
+                    st.rerun()
 
         if st.button("Clear chat", use_container_width=True):
             st.session_state.messages = []
             st.session_state.latest_trace = None
             st.session_state.pending_query = None
             st.session_state.conversation_id = None  # new conversation on next ask
+            # Keep session model overrides (Step4 policy)
             st.rerun()
 
         # Scheme B: Trace lives in sidebar → native independent scroll vs main chat
@@ -551,7 +642,11 @@ def _handle_pending_query() -> None:
     with st.spinner("Router → Retriever → Reranker → LLM …"):
         data, elapsed = _run_with_elapsed(
             "Answering",
-            lambda: ask(query, conversation_id=st.session_state.get("conversation_id")),
+            lambda: ask(
+                query,
+                conversation_id=st.session_state.get("conversation_id"),
+                session_models=_session_models_payload(),
+            ),
             slot=elapsed_slot,
         )
 

@@ -227,23 +227,67 @@ Router
 
 ---
 
+# Phase 6 Cloud Models & Session API Key（DashScope）
+
+> 来源：Step4 验收后的产品缺口（仅能切本地 Ollama；无 UI 配 Key）。  
+> **排在 Phase5 Evaluation 之后。**  
+> 规则：完成 Phase5 并由用户确认后，再开始本 Phase；一次只做一个可验收切片（实现时再拆 Step）。
+
+## 目标
+
+在保留本地 Ollama 路径的前提下，支持 **DashScope 云端 LLM + 云端 Embedding**，并提供 **Session 级 API Key 配置入口**（内存，不写 `.env` / 不进仓库）。
+
+## 已确认产品决策
+
+| 项 | 决策 |
+| --- | --- |
+| 排期 | **Phase6**，放在 **Phase5 Evaluation 之后** |
+| 云厂商 | **优先 DashScope** |
+| 范围 | **包含云 Embedding**（不仅云 LLM） |
+| Clear chat × Key | **A：Clear chat 保留 session Key**（与「Clear 保留模型覆盖」一致） |
+| 浏览器刷新 | Session Key 与 session 模型覆盖一并丢失（回 `.env` 默认） |
+| Key 持久化 | **禁止**写入 `.env`、仓库文件、长期磁盘（仅当前浏览器 session 内存；服务端仅请求级使用） |
+
+## 计划能力
+
+1. UI：Provider 切换（本地 Ollama ↔ DashScope）；模型名；**API Key 输入框**（不明文写回磁盘）
+2. Session：云 LLM 用于生成 /（按需）Rewrite；云 Embedding 用于本 session 入库与检索绑定
+3. Key 解析顺序（建议）：请求/session Key → 否则 `.env` 中已有 `DASHSCOPE_API_KEY` → 否则明确失败提示（不静默编造）
+4. 换云 Embedding 后：**提示并要求重新上传/入库**（与 Step4 embed 限制一致）
+5. Trace / 响应：展示 provider + 模型；**不回显完整 API Key**
+6. 测试 + 更新 `progress.md`；不做 Agent / Web Search / SQL / 知识图谱
+
+## 约束
+
+- 不破坏现有 Ollama RAG 主链；默认仍可纯本地运行
+- 禁止业务代码硬编码 Key；禁止 UI 把 Key 写入仓库
+- 小步修改；实现前可再拆 Step（如 6.1 Key+LLM，6.2 Embedding）
+
+## 验收
+
+- UI 可选 DashScope LLM，填 session Key（或使用 `.env` Key）后能完成问答
+- UI 可选 DashScope Embedding，重新入库后检索可用
+- Clear chat：**保留** session Key 与模型覆盖；浏览器刷新后 Key 丢失
+- Key 不出现在 git 跟踪文件、日志明文、Trace 明文
+- 完成后停止
+
+
+---
+
 # Phase4 Enhancement — 续作路线图（未完成 Steps）
 
 > 对照进度：[`progress.md`](progress.md)  
-> 主线 Phase1–Phase4 已完成；以下为 **Phase4 Enhancement** 剩余工作。  
-> 规则：一次只做一个 Step；完成后停止，等待用户下一步指令。
+> 主线 Phase1–Phase4 与 Enhancement Step1–Step4 已完成。  
+> **下一个主线工作：Phase5 Evaluation**；其后为 **Phase6（云模型 + Session Key）**。  
+> 规则：一次只做一个 Step/Phase 切片；完成后停止，等待用户下一步指令。
 
 ## 当前进度快照
 
-| Step | 内容 | 状态 |
+| Step / Phase | 内容 | 状态 |
 | --- | --- | --- |
-| Step1 | Knowledge Workspace UI + Trace + UI 打磨 | **完成** |
-| Step2 | 多格式 Document Loader（含 .ppt/.doc 显式 Office 转换） | **完成** |
-| Step3 | Conversation Memory | **完成** |
-| Step3.5 | Query Rewrite / Hybrid | **完成** |
-| **Step3.6** | 表格序列化 + OCR | **完成** |
-| Step4 | Session 模型配置管理 | **未开始 ← 下一个** |
-| （之后） | Phase5 Evaluation | 未开始 |
+| Step1–Step4 | Enhancement（UI/Loader/Memory/Rewrite/Hybrid/OCR/Session 本地模型） | **完成** |
+| **Phase5** | Evaluation（Recall / RAGAS / 测试集） | **未开始 ← 下一个** |
+| Phase6 | DashScope 云 LLM + 云 Embedding + Session API Key | 未开始 |
 
 **禁止越界：** 不实现 Agent / Multi-Agent / Web Search / SQL Agent / 知识图谱（除非用户明确要求）。
 
@@ -294,7 +338,7 @@ Router
 - 完成后停止
 
 
-## Step4 — Session 模型配置管理（下一个）
+## Step4 — Session 模型配置管理（已完成）
 
 ### 目标
 
@@ -308,7 +352,12 @@ UI 可改 LLM / Embedding / Reranker；**仅影响当前 session**，不写回 `
 ### 验收
 
 - Session 覆盖生效；刷新/Clear 策略与用户确认一致
-- 完成后可进入 Phase5 或项目展示优化（由用户指定）
+- 完成后进入 **Phase5 Evaluation**（再后为 Phase6 云模型）；由用户指定是否先做展示优化
+
+
+## Phase6 索引（详见上文「Phase 6 Cloud Models…」）
+
+未开始。排在 Phase5 之后；Clear chat **保留** session Key（已确认 A）。
 
 
 ## 新对话续作 Prompt（复制到新 Chat 使用）
