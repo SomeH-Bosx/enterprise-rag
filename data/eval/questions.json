@@ -1,0 +1,45 @@
+[
+  {
+    "question": "How many annual leave days do ACME full-time employees get?",
+    "expected_filename": "acme_employee_handbook.pdf",
+    "expected_page_hint": 0
+  },
+  {
+    "question": "According to acme_employee_handbook, how many remote work days are allowed per week?",
+    "expected_filename": "acme_employee_handbook.pdf",
+    "expected_page_hint": 0
+  },
+  {
+    "question": "What is the expense claim deadline in the ACME handbook?",
+    "expected_filename": "acme_employee_handbook.pdf"
+  },
+  {
+    "question": "What is the product name in beta_product_spec?",
+    "expected_filename": "beta_product_spec.pdf",
+    "expected_page_hint": 0
+  },
+  {
+    "question": "What is the p95 latency SLO for Nebula Search Appliance?",
+    "expected_filename": "beta_product_spec.pdf"
+  },
+  {
+    "question": "Which connectors does the Beta product support?",
+    "expected_filename": "beta_product_spec.pdf"
+  },
+  {
+    "question": "Does the ACME handbook mention paid leave policy?",
+    "expected_filename": "acme_employee_handbook.pdf"
+  },
+  {
+    "question": "In beta_product_spec, is Confluence a supported connector?",
+    "expected_filename": "beta_product_spec.pdf"
+  },
+  {
+    "question": "What remote work rule is described for ACME employees?",
+    "expected_filename": "acme_employee_handbook.pdf"
+  },
+  {
+    "question": "What latency target is defined in the Beta product specification?",
+    "expected_filename": "beta_product_spec.pdf"
+  }
+]

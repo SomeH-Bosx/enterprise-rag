@@ -1,0 +1,87 @@
+# Default (recommended): API + Streamlit UI, Ollama on the HOST machine.
+#   1) Start Ollama locally and pull models
+#   2) docker compose up --build
+#
+# Optional full stack (Ollama in Docker — heavy, needs model pull inside container):
+#   docker compose --profile with-ollama up --build
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Host Ollama (Docker Desktop). On Linux add extra_hosts below if needed.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:7b}
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      VECTOR_DB_PATH: /app/chroma_db
+      UPLOAD_CACHE_DIR: /app/upload_cache
+      BM25_STORE_PATH: /app/chroma_db/bm25_store.json
+      DOC_REGISTRY_PATH: /app/chroma_db/doc_registry.json
+      USE_BM25: ${USE_BM25:-false}
+      USE_RERANKER: ${USE_RERANKER:-true}
+      USE_QUERY_ROUTER: ${USE_QUERY_ROUTER:-true}
+      QUERY_ROUTER_MODE: ${QUERY_ROUTER_MODE:-rules_llm}
+      USE_QUERY_REWRITE: ${USE_QUERY_REWRITE:-true}
+      QUERY_REWRITE_MODE: ${QUERY_REWRITE_MODE:-rules_llm}
+      ENABLE_TABLE_SERIALIZATION: ${ENABLE_TABLE_SERIALIZATION:-true}
+      ENABLE_OCR: ${ENABLE_OCR:-true}
+      OCR_LANG: ${OCR_LANG:-chi_sim+eng}
+      RERANKER_BACKEND: ${RERANKER_BACKEND:-dashscope}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      DASHSCOPE_RERANK_MODEL: ${DASHSCOPE_RERANK_MODEL:-gte-rerank-v2}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+    volumes:
+      - chroma_data:/app/chroma_db
+      - upload_data:/app/upload_cache
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
+  ui:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      API_BASE_URL: http://api:8000
+      STREAMLIT_PORT: 8501
+    depends_on:
+      api:
+        condition: service_started
+    command:
+      [
+        "streamlit",
+        "run",
+        "apps/web/streamlit_app.py",
+        "--server.address=0.0.0.0",
+        "--server.port=8501",
+        "--browser.gatherUsageStats=false",
+      ]
+
+  # Optional: containerized Ollama (large image/models; prefer host Ollama for demos)
+  ollama:
+    profiles: ["with-ollama"]
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  chroma_data:
+  upload_data:
+  ollama_data:
