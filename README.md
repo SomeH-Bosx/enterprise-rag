@@ -4,8 +4,7 @@
 > One-liner: Turn private enterprise documents into citable Q&A with local LLM + vector retrieval.
 
 **状态 / Status:** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · Phase6（云模型）= Future Work  
-**架构图 / Architecture:** [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)  
-**进度 / Progress:** [`docs/progress.md`](docs/progress.md) · **评测 / Eval:** [`docs/eval.md`](docs/eval.md) · **Docker:** [`docs/docker.md`](docs/docker.md)
+**架构图 / Architecture:** [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · **评测 / Eval:** [`docs/eval.md`](docs/eval.md) · **Docker:** [`docs/docker.md`](docs/docker.md) · **演示:** [`docs/demo_script.md`](docs/demo_script.md)
 
 ---
 
@@ -197,10 +196,11 @@ enterprise-rag/
 ## 10. 相关文档
 
 - [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) — 架构图  
-- [`docs/progress.md`](docs/progress.md) — 进度  
-- [`docs/development_plan.md`](docs/development_plan.md) — 开发计划（含 Phase6 Future Work）  
 - [`docs/eval.md`](docs/eval.md) — 评测操作  
 - [`docs/docker.md`](docs/docker.md) — Docker / Ollama  
+- [`docs/demo_script.md`](docs/demo_script.md) — 演示脚本  
+- [`docs/architecture_decisions.md`](docs/architecture_decisions.md) — 架构决策（ADR）  
+- [`docs/development_plan.md`](docs/development_plan.md) — 开发计划（含 Phase6 Future Work）  
 
 ---
 
@@ -281,4 +281,4 @@ All secrets/paths/models via `.env` — no hardcoding; UI session overrides are 
 
 ## 10. Docs (EN)
 
-[`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · [`docs/progress.md`](docs/progress.md) · [`docs/eval.md`](docs/eval.md) · [`docs/docker.md`](docs/docker.md) · [`docs/development_plan.md`](docs/development_plan.md)
+[`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · [`docs/eval.md`](docs/eval.md) · [`docs/docker.md`](docs/docker.md) · [`docs/demo_script.md`](docs/demo_script.md) · [`docs/architecture_decisions.md`](docs/architecture_decisions.md) · [`docs/development_plan.md`](docs/development_plan.md)

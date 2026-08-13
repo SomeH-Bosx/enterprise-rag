@@ -1,8 +1,8 @@
 # Enterprise RAG — 最终架构图
 
-> 基于当前实现：**Phase1–Phase4（RAG + Reranker + Query Router + 工程化）**  
-> 默认在线链路：`User → FastAPI/Streamlit → Query Router → (Retriever → Reranker → Prompt → LLM) | (LLM 直答)`  
-> 对照进度：[`docs/progress.md`](docs/progress.md) · 计划：[`docs/development_plan.md`](docs/development_plan.md) · Docker：[`docs/docker.md`](docs/docker.md)
+> 基于当前实现：**Phase1–Phase5（RAG + Reranker + Query Router + 工程化 + Evaluation）**；Phase6 = Future Work  
+> 默认在线链路：`User → FastAPI/Streamlit → Query Router → (Rewrite? → Dense[/Hybrid] → Reranker → Prompt → LLM) | (LLM 直答)`  
+> 评测：[`docs/eval.md`](docs/eval.md) · 计划：[`docs/development_plan.md`](docs/development_plan.md) · Docker：[`docs/docker.md`](docs/docker.md)
 
 ---
 
@@ -18,7 +18,7 @@
 flowchart TB
   subgraph Clients["接入层"]
     API["FastAPI<br/>apps/api/main.py"]
-    Web["Gradio Admin<br/>apps/web/app.py"]
+    Web["Streamlit Workspace<br/>apps/web/streamlit_app.py"]
     CLI["CLI<br/>apps/cli/main.py"]
   end
 

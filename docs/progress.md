@@ -211,9 +211,9 @@ src/reranker/
 └── lexical_reranker.py       # 别名模块
 src/services/qa_service.py    # dense → rerank → LLM 接线
 scripts/generate_reranker_compare.py
-scripts/phase2_compare_rerank.py
 evaluation/reranker_compare.md
 docs/retrieval_ablation.md
+# （已移除冗余）scripts/phase2_compare_rerank.py → 请用 CLI `compare` 或 generate_reranker_compare.py
 tests/test_dashscope_reranker.py
 tests/test_rag_dashscope_rerank_flow.py
 ```
@@ -1057,6 +1057,25 @@ Current Query (+ Memory)
 - 真实 Streamlit UI 截图 4 张：`docs/demo/01_workspace_upload.png` … `04_eval_summary.png`
 - README 中英文「功能展示」挂图；`docs/demo_script.md` 补充重截说明
 - 可选脚本：`scripts/capture_demo_screenshots.py`（不改 RAG 主链；`playwright` 不写入 requirements）
+
+
+下一阶段：
+
+**等待指令**
+
+---
+
+### 冗余清理（秋招公开面）
+
+状态：完成
+
+
+实现：
+
+- 删除过时 Phase2 检查清单 `docs/decision_log.md`（与 ADR/progress 三重叠且配置描述过时）
+- 删除冗余脚本 `scripts/phase2_compare_rerank.py`（与 CLI `compare` / `generate_reranker_compare.py` 重叠）
+- README 公开入口不再强链 `docs/progress.md`（进度账仍 git 跟踪，供本地开发）
+- `RAG_ARCHITECTURE.md`：接入层改为 Streamlit；状态对齐 Phase5 / Phase6 Future Work
 
 
 下一阶段：
