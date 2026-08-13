@@ -543,7 +543,7 @@ FastAPI
 - **Ollama 默认不进应用镜像**：模型大、GPU 依赖强；推荐宿主机运行（已文档化）。compose `with-ollama` profile 可选但偏重。
 - **DashScope Key 仍依赖外部**：无 Key 时 Reranker 回退 Lexical，语义质量下降。
 - **Streamlit 依赖 API 进程**：需先起 FastAPI；Docker 下由 compose `depends_on` 串联。
-- **Demo 截图未强制入库**：计划中的 Demo 截图可由演示时补充到 `docs/`。
+- **Demo 截图已入库**：`docs/demo/*.png`（上传 / 问答+Sources / Trace / Phase5 摘要）；README 中英文「功能展示」已挂图；重截脚本 `scripts/capture_demo_screenshots.py`。
 - **Phase5 评测未做**：Recall / RAGAS 系统化评测留给下一阶段。
 
 
@@ -1039,6 +1039,24 @@ Current Query (+ Memory)
 - **D UI**：Streamlit 侧栏 / 按钮 / Trace 面板文案中文化
 - 评测报告 Markdown 模板改为中文（下次跑 `eval` 生效）
 - **未改**：标识符、测试名、`.env`、业务行为；git 由用户自行处理
+
+
+下一阶段：
+
+**等待指令**
+
+---
+
+### Demo 截图（秋招展示）
+
+状态：完成
+
+
+实现：
+
+- 真实 Streamlit UI 截图 4 张：`docs/demo/01_workspace_upload.png` … `04_eval_summary.png`
+- README 中英文「功能展示」挂图；`docs/demo_script.md` 补充重截说明
+- 可选脚本：`scripts/capture_demo_screenshots.py`（不改 RAG 主链；`playwright` 不写入 requirements）
 
 
 下一阶段：

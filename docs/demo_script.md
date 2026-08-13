@@ -30,3 +30,15 @@ streamlit run apps/web/streamlit_app.py --server.port 8501
 ## 收尾一句话
 
 > 这是本地优先的企业 RAG：FastAPI + Streamlit、可解释 Trace、Memory、可选 Hybrid/Rewrite，以及可复现的 Phase5 评测报告——不是只能点一点的 Notebook Demo。Phase6 云模型列为 Future Work。
+
+## Demo 截图
+
+README「功能展示」已挂图：`docs/demo/01_workspace_upload.png` … `04_eval_summary.png`。
+
+重截（API `:8000` + Streamlit `:8501` 已启动）：
+
+```bash
+pip install playwright
+playwright install chromium
+python scripts/capture_demo_screenshots.py
+```

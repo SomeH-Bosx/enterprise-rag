@@ -81,6 +81,17 @@ Query Router（规则 + LLM）
 5. **Session 模型覆盖**：LLM / Embedding / Reranker backend 仅影响当前浏览器会话，不写回 `.env`  
 6. **评测**：`python -m apps.cli.main eval`（见 [`docs/eval.md`](docs/eval.md)）
 
+### Demo 截图
+
+| 场景 | 截图 |
+| --- | --- |
+| 知识库上传 / 已索引文档 | ![Workspace upload](docs/demo/01_workspace_upload.png) |
+| 问答 + 引用来源 | ![Q&A with sources](docs/demo/02_qa_sources.png) |
+| Answer Trace / 置信度 | ![Answer Trace](docs/demo/03_answer_trace.png) |
+| Phase5 评测摘要 | ![Eval summary](docs/demo/04_eval_summary.png) |
+
+演示口述见 [`docs/demo_script.md`](docs/demo_script.md)。重截图（需本机 API+UI 已启动）：`python scripts/capture_demo_screenshots.py`（依赖可选 `playwright`）。
+
 ## 5. 运行方式
 
 ### 5.1 环境准备
@@ -223,6 +234,17 @@ LangChain · Ollama · Chroma · DashScope Reranker · FastAPI · Streamlit · D
 - Query Router, Memory, Query Rewrite, optional BM25 Hybrid, Reranker  
 - Streamlit workspace: Trace, session model overrides (no `.env` write)  
 - Evaluation: Recall@K + RAGAS-style metrics via CLI  
+
+### Demo screenshots
+
+| Scene | Screenshot |
+| --- | --- |
+| Knowledge upload / indexed docs | ![Workspace upload](docs/demo/01_workspace_upload.png) |
+| Q&A + sources | ![Q&A with sources](docs/demo/02_qa_sources.png) |
+| Answer Trace / confidence | ![Answer Trace](docs/demo/03_answer_trace.png) |
+| Phase5 eval snapshot | ![Eval summary](docs/demo/04_eval_summary.png) |
+
+Walkthrough: [`docs/demo_script.md`](docs/demo_script.md). Re-capture: `python scripts/capture_demo_screenshots.py` (optional `playwright`).
 
 ## 5. Run (EN)
 
