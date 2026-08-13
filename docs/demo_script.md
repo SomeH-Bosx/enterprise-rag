@@ -1,33 +1,44 @@
-# 2–3 Minute Demo Script
+# 2–3 分钟演示脚本
 
-## Setup (before recording)
+## 录制前准备
 
 ```bash
 cd enterprise-rag
 python -m venv .venv
 # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env   # or cp
+copy .env.example .env
 ollama pull qwen2.5:7b
 ollama pull nomic-embed-text
 python scripts/make_sample_pdfs.py
+python -m apps.cli.main ingest-dir data/samples
 uvicorn apps.api.main:app --host 127.0.0.1 --port 8000
+streamlit run apps/web/streamlit_app.py --server.port 8501
 ```
 
-Optional UI: `python apps/web/app.py`
+## 演示流程（边点边讲）
 
-## Demo flow (speak while clicking)
+1. **健康检查** — 打开 `http://127.0.0.1:8000/health`，展示 Ollama 与文档数。  
+2. **上传 / 知识库** — Streamlit 侧栏展示已索引文档；可再传一份样例 PDF。  
+3. **知识问答** — 问：`How many annual leave days do ACME full-time employees get?`  
+   - 展示答案、Sources、侧栏 Answer Trace（Router / Retrieval / Rerank / Confidence）。  
+4. **闲聊路由** — 问：`你好，你是谁？` — 说明走 casual，不检索。  
+5. **多轮 Memory** — 先问年假，再问「那病假呢？」— 展示 conversation 与改写/检索行为（若开启 Rewrite）。  
+6. **Session 模型** — 打开 Change models，说明仅当前会话生效、不写 `.env`。  
+7. **评测（可选）** — `python -m apps.cli.main eval --skip-generation`，打开 `evaluation/phase5_report.md` 展示 Recall@K。
 
-1. **Health** — open `http://127.0.0.1:8000/health`, show Ollama ok + empty index.
-2. **Ingest two docs** — upload `acme_employee_handbook.pdf` and `beta_product_spec.pdf`.
-3. **List documents** — `GET /documents` shows both `doc_id`s (multi-doc, no wipe).
-4. **Routed question** — ask: `According to acme_employee_handbook, how many remote work days are allowed per week?`
-   - Point at `route_reason=filename_match` and citations.
-5. **Cross-doc question** — ask: `What is the p95 latency SLO for Nebula Search Appliance?`
-   - Show structured JSON: `final_answer` + `citations`.
-6. **Delete one doc** — `DELETE /documents/{doc_id}` for ACME; show Beta still answers.
-7. **Eval numbers** — `python -m apps.cli.main eval` and open `data/eval/report.md` (hit@k + page hit rate).
+## 收尾一句话
 
-## Closing line
+> 这是本地优先的企业 RAG：FastAPI + Streamlit、可解释 Trace、Memory、可选 Hybrid/Rewrite，以及可复现的 Phase5 评测报告——不是只能点一点的 Notebook Demo。Phase6 云模型列为 Future Work。
 
-> This is a local-first enterprise RAG: FastAPI service, multi-doc upsert, hybrid retrieval with CrossEncoder rerank, structured citations, and a reproducible mini-eval — not a Gradio-only notebook demo.
+## Demo 截图
+
+README「功能展示」已挂图：`docs/demo/01_workspace_upload.png` … `04_eval_summary.png`。
+
+重截（API `:8000` + Streamlit `:8501` 已启动）：
+
+```bash
+pip install playwright
+playwright install chromium
+python scripts/capture_demo_screenshots.py
+```

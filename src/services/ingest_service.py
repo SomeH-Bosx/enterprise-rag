@@ -1,13 +1,17 @@
+"""入库服务：多格式加载 → 切分 → Embedding → Chroma（+ BM25 索引）。"""
+
 from __future__ import annotations
 
 import hashlib
 import shutil
+import threading
 from pathlib import Path
 from typing import Any
 
 from langchain_core.documents import Document
 
 from src.config.logging import get_logger
+from src.config.session_models import SessionModelOverrides
 from src.config.settings import Settings, get_settings
 from src.indexing.bm25_store import BM25Store
 from src.indexing.doc_registry import DocRegistry
@@ -38,18 +42,76 @@ class IngestService:
         self.vector_store = vector_store or VectorStoreManager(self.settings)
         self.bm25_store = bm25_store or BM25Store(self.settings)
         self.registry = registry or DocRegistry(self.settings)
+        self._ingest_lock = threading.RLock()
 
-    def ingest_file(self, path: str | Path, doc_id: str | None = None) -> dict[str, Any]:
+    def ingest_file(
+        self,
+        path: str | Path,
+        doc_id: str | None = None,
+        model_overrides: SessionModelOverrides | dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
-        Unified ingest:
-          detect → [convert legacy] → load → split → embed → vector DB
+        统一入库：detect → [legacy 转换] → load → split → embed → 向量库。
 
-        Conversion (.ppt→.pptx / .doc→.docx) is an explicit, returned pipeline step.
+        可选 session `embed_model` 仅对本上传生效（重绑向量库 Embedding，不写 `.env`）。
         """
+        overrides = (
+            model_overrides
+            if isinstance(model_overrides, SessionModelOverrides)
+            else SessionModelOverrides.from_mapping(model_overrides)
+        )
+        with self._ingest_lock:
+            return self._ingest_file_impl(path, doc_id=doc_id, overrides=overrides)
+
+    def _ingest_file_impl(
+        self,
+        path: str | Path,
+        *,
+        doc_id: str | None,
+        overrides: SessionModelOverrides,
+    ) -> dict[str, Any]:
         src = Path(path)
         if not src.exists():
             raise IngestError(f"File not found: {src}")
 
+        effective = overrides.apply(self.settings)
+        if overrides.embed_model and overrides.embed_model != self.vector_store.settings.embed_model:
+            # Rebind store embedding for this session and keep it (do not write .env).
+            self.vector_store.settings = self.vector_store.settings.model_copy(
+                update={"embed_model": overrides.embed_model}
+            )
+            self.vector_store.refresh()
+            logger.info(
+                "session_embed_bound",
+                embed_model=overrides.embed_model,
+                note="re-ingest existing docs if they were embedded with another model",
+            )
+
+        result = self._ingest_body(src, doc_id=doc_id)
+        result["session_models"] = overrides.to_public_dict(effective)
+        return result
+
+    def bind_session_embed(self, embed_model: str | None) -> dict[str, Any]:
+        """按 session 覆盖绑定向量库 Embedding（或恢复默认）。"""
+        with self._ingest_lock:
+            target = (embed_model or "").strip() or self.settings.embed_model
+            if target.lower().startswith("ollama:"):
+                target = target.split(":", 1)[1].strip()
+            prev = self.vector_store.settings.embed_model
+            if target != prev:
+                self.vector_store.settings = self.vector_store.settings.model_copy(
+                    update={"embed_model": target}
+                )
+                self.vector_store.refresh()
+            return {
+                "embed_model": target,
+                "previous": prev,
+                "rebound": target != prev,
+                "persisted_to_env": False,
+            }
+
+    def _ingest_body(self, src: Path, *, doc_id: str | None) -> dict[str, Any]:
+        """原始入库主体（路径已校验）。"""
         cache_dir = Path(self.settings.upload_cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
         cached = cache_dir / src.name
@@ -215,7 +277,7 @@ class IngestService:
         }
 
     def ingest_pdf(self, path: str | Path, doc_id: str | None = None) -> dict[str, Any]:
-        """Backward-compatible alias for ingest_file."""
+        """兼容旧名，等同 ingest_file。"""
         return self.ingest_file(path, doc_id=doc_id)
 
     def delete_document(self, doc_id: str) -> dict[str, Any]:

@@ -1,4 +1,4 @@
-"""Answer Trace + Confidence helpers for explainable RAG responses."""
+"""Answer Trace + Confidence：可解释 RAG 响应辅助。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 
 
 def distance_to_similarity(distance: float | None) -> float | None:
-    """Convert Chroma distance (lower=better) to a 0–1 similarity-like score."""
+    """将 Chroma distance（越小越好）转为 0–1 相似度风格分数。"""
     if distance is None:
         return None
     try:

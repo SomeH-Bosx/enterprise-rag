@@ -1,4 +1,4 @@
-"""Shared helpers for format-specific document loaders."""
+"""各格式 Document Loader 的共享辅助函数。"""
 
 from __future__ import annotations
 

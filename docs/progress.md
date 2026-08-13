@@ -543,7 +543,7 @@ FastAPI
 - **Ollama 默认不进应用镜像**：模型大、GPU 依赖强；推荐宿主机运行（已文档化）。compose `with-ollama` profile 可选但偏重。
 - **DashScope Key 仍依赖外部**：无 Key 时 Reranker 回退 Lexical，语义质量下降。
 - **Streamlit 依赖 API 进程**：需先起 FastAPI；Docker 下由 compose `depends_on` 串联。
-- **Demo 截图未强制入库**：计划中的 Demo 截图可由演示时补充到 `docs/`。
+- **Demo 截图已入库**：`docs/demo/*.png`（上传 / 问答+Sources / Trace / Phase5 摘要）；README 中英文「功能展示」已挂图；重截脚本 `scripts/capture_demo_screenshots.py`。
 - **Phase5 评测未做**：Recall / RAGAS 系统化评测留给下一阶段。
 
 
@@ -597,7 +597,16 @@ FastAPI
 ## Phase4 Enhancement
 
 状态：
-进行中（Step1–Step3.6 完成，等待 Step4 指令）
+完成（Step1–Step4 均完成）
+
+**路线前瞻：**
+
+| Phase | 内容 | 状态 |
+| --- | --- | --- |
+| **Phase5** | Evaluation（Recall / RAGAS-style / 测试集） | **完成** |
+| **Phase6** | DashScope 云 LLM + 云 Embedding + Session API Key（Clear chat 保留 Key） | **未开始 ← 下一个** |
+
+详见 [`development_plan.md`](development_plan.md) · 评测操作：[`eval.md`](eval.md)
 
 
 ### 阶段拆分（已确认）
@@ -609,7 +618,7 @@ FastAPI
 | **Step3** | Conversation Memory | **完成** |
 | **Step3.5** | Query Rewrite / Hybrid（换问法鲁棒性） | **完成** |
 | **Step3.6** | 表格序列化 + OCR（解析增强） | **完成** |
-| **Step4** | Session 模型配置管理 | 未开始 |
+| **Step4** | Session 模型配置管理 | **完成** |
 
 说明：Query Rewrite / Hybrid 作为独立 Step，插在 Memory 之后、表格/OCR 之前。
 
@@ -638,7 +647,7 @@ FastAPI
 | Conversation Memory | **完成（Step3）** | conversation_id + 窗口截断 + UI 续聊 |
 | Query Rewrite / Hybrid | **完成（Step3.5）** | Rewrite 检索用；Hybrid 默认关 |
 | Table serialization + OCR | **完成（Step3.6）** | Markdown 表；OCR=tesseract 默认开 |
-| Model Configuration | 未开始 | Step4 |
+| Model Configuration | **完成（Step4）** | Session 覆盖；不写回 .env |
 
 
 ### Step1：UI Workspace + Trace Panel
@@ -952,4 +961,104 @@ Current Query (+ Memory)
 
 下一阶段：
 
-**等待指令** — Step4 Session 模型配置管理
+（历史记录）其后已完成 Step4；当前下一个为 **Phase5 Evaluation**，再后 **Phase6**
+
+---
+
+### Step4：Session 模型配置管理
+
+状态：完成
+
+
+实现：
+
+- `src/config/session_models.py`：Session 覆盖（LLM / Embedding / Reranker backend）；不写 `.env`；不含 Key
+- `/chat` 接受 `llm_model` / `embed_model` / `reranker_backend`（或 `session_models`）
+- `/session/models` GET/POST：读默认值、绑定 session embed
+- `/upload` 可带 `embed_model` query
+- Streamlit：可编辑模型；Apply / Reset；**Clear chat 保留覆盖**；浏览器刷新回 `.env` 默认
+- Embedding 变更需重新上传文档才一致（UI 已提示）
+
+
+#### Clear / Refresh 策略（本 Step 确认）
+
+| 动作 | 模型覆盖 | 对话 Memory |
+| --- | --- | --- |
+| Clear chat | **保留** | 新 conversation_id |
+| Reset to .env defaults | 清除覆盖 | 不变 |
+| 浏览器刷新 | 丢失（回 `.env`） | 丢失 UI 会话 |
+
+
+#### 测试
+
+- `pytest tests/test_session_models.py tests/test_api_phase4.py tests/test_conversation_memory.py` → **14 passed**
+
+
+下一阶段：
+
+**等待指令** — Phase6 DashScope 云模型 + Session Key（或先做展示优化）
+
+---
+
+### Phase5：Evaluation
+
+状态：完成
+
+
+实现：
+
+- 典型题集扩写：`data/eval/questions.json`（含 ground_truth / must_include，中英题）
+- Recall@K：`src/eval/recall.py`
+- RAGAS-style：`src/eval/ragas_lite.py`（faithfulness / answer_relevancy / context_precision）
+- 统一 runner：`src/eval/runner.py` → Markdown + JSON 报告
+- CLI：`python -m apps.cli.main eval`（`--skip-generation` 可只测召回）
+- 操作说明：`docs/eval.md`
+
+
+#### 测试
+
+- `pytest tests/test_phase5_eval.py`（指标单测）
+
+
+下一阶段：
+
+**Phase6 = Future Work**（云 LLM/Embed + Session Key，秋招冲刺不强制）
+
+---
+
+### 文档 / 注释中文化（展示优化）
+
+状态：完成
+
+
+实现：
+
+- **A 文档**：`docs/` 面向人的说明以中文为主（含 demo / ADR / eval / docker；消融报告章节标题中文化）
+- **B README**：保持双语；中英区对齐现状（Step4 + Phase5 完成，Phase6=Future Work，Recall@5≈91.7%）
+- **C 关键 docstring**：`src/services`、`src/eval`、`session_models`、`query_rewrite`、`ingestion`、`memory`、`router`、`generation/trace`、`apps/api`、`apps/cli`、`apps/web`
+- **D UI**：Streamlit 侧栏 / 按钮 / Trace 面板文案中文化
+- 评测报告 Markdown 模板改为中文（下次跑 `eval` 生效）
+- **未改**：标识符、测试名、`.env`、业务行为；git 由用户自行处理
+
+
+下一阶段：
+
+**等待指令**
+
+---
+
+### Demo 截图（秋招展示）
+
+状态：完成
+
+
+实现：
+
+- 真实 Streamlit UI 截图 4 张：`docs/demo/01_workspace_upload.png` … `04_eval_summary.png`
+- README 中英文「功能展示」挂图；`docs/demo_script.md` 补充重截说明
+- 可选脚本：`scripts/capture_demo_screenshots.py`（不改 RAG 主链；`playwright` 不写入 requirements）
+
+
+下一阶段：
+
+**等待指令**

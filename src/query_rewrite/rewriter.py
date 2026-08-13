@@ -1,10 +1,10 @@
-"""Query Rewrite: rewrite for retrieval; answer still uses the original user query.
+"""Query Rewrite：为检索改写查询；生成答案仍使用用户原问。
 
-Pipeline role (Step3.5):
-  Current Query (+ Memory) → Rewrite → Dense[/Hybrid] → Rerank → Prompt(原问) → LLM
+流水线角色（Step3.5）：
+  当前问 (+ Memory) → 改写 → Dense[/Hybrid] → 重排 → Prompt(原问) → LLM
 
-Fallback when rewrite fails / disabled:
-  Step3 memory-aware concat (`build_retrieval_query`).
+改写失败 / 关闭时回退：
+  Step3 记忆感知拼接（`build_retrieval_query`）。
 """
 
 from __future__ import annotations
@@ -97,8 +97,8 @@ def _looks_like_followup(query: str) -> bool:
 
 def _rule_rewrite(current: str, history: list[Message]) -> str | None:
     """
-    Lightweight rule rewrite for short follow-ups:
-    prepend the most recent prior user topic when pronouns / 那…呢 appear.
+    短追问的轻量规则改写：
+    出现代词 /「那…呢」时，把最近一轮用户话题前置拼接。
     """
     current = _normalize(current)
     if not current or not history:

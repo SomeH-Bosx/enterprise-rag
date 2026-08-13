@@ -1,11 +1,11 @@
 # Enterprise RAG
 
-> 一句话：用本地 LLM + 向量检索，把企业内部 PDF 变成可引用的智能问答服务。  
-> One-liner: Turn private enterprise PDFs into citable Q&A with local LLM + vector retrieval.
+> 一句话：用本地 LLM + 向量检索，把企业内部文档变成可引用的智能问答服务。  
+> One-liner: Turn private enterprise documents into citable Q&A with local LLM + vector retrieval.
 
-**状态 / Status:** Phase1–Phase4 complete · Phase5 evaluation pending  
+**状态 / Status:** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · Phase6（云模型）= Future Work  
 **架构图 / Architecture:** [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)  
-**进度 / Progress:** [`docs/progress.md`](docs/progress.md) · **Docker:** [`docs/docker.md`](docs/docker.md)
+**进度 / Progress:** [`docs/progress.md`](docs/progress.md) · **评测 / Eval:** [`docs/eval.md`](docs/eval.md) · **Docker:** [`docs/docker.md`](docs/docker.md)
 
 ---
 
@@ -30,8 +30,10 @@
 
 ## 1. 项目介绍
 
-企业知识分散在 PDF 手册与规格书中，通用聊天模型容易编造答案。  
-**Enterprise RAG** 提供私有化路径：上传文档 → 向量入库 → 按问题类型路由 → 检索重排 → 本地 LLM 生成，并返回**引用来源**，便于演示与审计。
+企业知识分散在手册、规格书与 Office 文档中，通用聊天模型容易编造答案。  
+**Enterprise RAG** 提供私有化路径：多格式上传 → 向量入库 → 意图路由 →（可选改写 / Hybrid）检索重排 → 本地 LLM 生成，并返回**引用来源**与 Answer Trace，便于演示、审计与秋招作品集展示。
+
+当前样例评测（Recall@5，视本机索引而定）约 **91.7%**；详见 [`evaluation/phase5_report.md`](evaluation/phase5_report.md)。云端生成/Embedding + Session API Key（Phase6）列为 **Future Work**。
 
 ## 2. 系统架构图
 
@@ -41,22 +43,17 @@ User
 Query Router（规则 + LLM）
   ├── knowledge_query
   │     ↓
-  │   Retriever（Chroma Top-20）
-  │     ↓
-  │   Reranker（DashScope → Top-5）
-  │     ↓
-  │   Prompt Builder
-  │     ↓
-  │   Ollama LLM → Answer + Sources
+  │   Query Rewrite（可选）→ Dense[/Hybrid BM25] → Reranker → Prompt(原问+Memory) → Ollama
+  │     → Answer + Sources + Trace
   └── casual_chat
         ↓
-      Ollama LLM（跳过检索）
+      Ollama（跳过检索，可带 Memory）
 ```
 
 入库：
 
 ```text
-PDF → Loader → Chunk → Embedding → Chroma
+多格式文件 → [Office 转换] → Loader →（表格 Markdown / 可选 OCR）→ Chunk → Embedding → Chroma + BM25
 ```
 
 完整 Mermaid 图见 [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)。
@@ -66,20 +63,34 @@ PDF → Loader → Chunk → Embedding → Chroma
 | 层级 | 技术 |
 | --- | --- |
 | 编排 / RAG | LangChain |
-| 本地 LLM / Embedding | Ollama（`qwen2.5:7b` / `nomic-embed-text`） |
+| 本地 LLM / Embedding | Ollama（如 `qwen2.5:7b` / `nomic-embed-text`） |
 | 向量库 | Chroma |
 | 语义重排 | DashScope `gte-rerank-v2`（失败回退 Lexical） |
 | API | FastAPI |
 | Demo UI | Streamlit（另保留 Gradio 薄客户端） |
 | 配置 | `.env` + pydantic-settings |
 | 部署 | Docker / docker-compose |
+| 评测 | CLI Recall@K + RAGAS-style 轻量指标 |
 
 ## 4. 功能展示
 
-1. **PDF 上传**：`POST /upload` 触发解析、切分、向量化、入库  
-2. **智能问答**：`POST /chat` 经 Query Router 分流知识库 / 闲聊  
-3. **引用来源**：返回 `sources[]`（文件名、页码、片段）  
-4. **Streamlit Demo**：上传、提问、展示答案与引用  
+1. **多格式上传**：pdf / doc(x) / ppt(x) / md / txt；legacy Office 可显式转换  
+2. **智能问答**：Query Router 分流知识库 / 闲聊；可选 Query Rewrite、Hybrid（BM25 默认关）  
+3. **引用来源 + Trace**：sources、置信度、原问/改写问、Hybrid 开关  
+4. **Conversation Memory**：多轮窗口；Clear chat 开新会话  
+5. **Session 模型覆盖**：LLM / Embedding / Reranker backend 仅影响当前浏览器会话，不写回 `.env`  
+6. **评测**：`python -m apps.cli.main eval`（见 [`docs/eval.md`](docs/eval.md)）
+
+### Demo 截图
+
+| 场景 | 截图 |
+| --- | --- |
+| 知识库上传 / 已索引文档 | ![Workspace upload](docs/demo/01_workspace_upload.png) |
+| 问答 + 引用来源 | ![Q&A with sources](docs/demo/02_qa_sources.png) |
+| Answer Trace / 置信度 | ![Answer Trace](docs/demo/03_answer_trace.png) |
+| Phase5 评测摘要 | ![Eval summary](docs/demo/04_eval_summary.png) |
+
+演示口述见 [`docs/demo_script.md`](docs/demo_script.md)。重截图（需本机 API+UI 已启动）：`python scripts/capture_demo_screenshots.py`（依赖可选 `playwright`）。
 
 ## 5. 运行方式
 
@@ -105,6 +116,7 @@ ollama pull nomic-embed-text
 
 ```bash
 python scripts/make_sample_pdfs.py
+python -m apps.cli.main ingest-dir data/samples
 ```
 
 ### 5.2 启动 API
@@ -117,28 +129,15 @@ uvicorn apps.api.main:app --host 127.0.0.1 --port 8000
 
 ### 5.3 启动 Streamlit Demo
 
-另开终端：
-
 ```bash
 streamlit run apps/web/streamlit_app.py --server.port 8501
 ```
 
 浏览器打开 `http://127.0.0.1:8501`。
 
-### 5.4 Docker 一键启动（API + UI）
+### 5.4 Docker / 快速调用
 
-推荐：**Ollama 跑在宿主机**，容器只跑 Python 应用。
-
-```bash
-docker compose up --build
-```
-
-- API: http://127.0.0.1:8000  
-- UI: http://127.0.0.1:8501  
-
-说明与可选「Ollama 容器化」见 [`docs/docker.md`](docs/docker.md)。
-
-### 5.5 快速调用示例
+见 [`docs/docker.md`](docs/docker.md)。评测见 [`docs/eval.md`](docs/eval.md)。
 
 ```bash
 curl -F "file=@data/samples/acme_employee_handbook.pdf" http://127.0.0.1:8000/upload
@@ -153,41 +152,36 @@ curl -X POST http://127.0.0.1:8000/chat ^
 ```text
 enterprise-rag/
 ├── apps/
-│   ├── api/main.py              # FastAPI（/upload /chat /health）
-│   ├── web/streamlit_app.py     # Streamlit Demo【Phase4】
-│   ├── web/app.py               # Gradio 薄客户端（可选）
-│   └── cli/                     # 命令行工具
+│   ├── api/main.py              # FastAPI
+│   ├── web/streamlit_app.py     # Knowledge Workspace UI
+│   └── cli/main.py              # ingest-dir / eval / compare
 ├── src/
-│   ├── router/                  # Query Router
-│   ├── reranker/                # DashScope / Lexical
-│   ├── ingestion/ · indexing/   # 入库与向量
-│   ├── generation/              # Prompt / LLM
-│   ├── services/                # Ingest / QA 编排
-│   └── config/                  # Settings / Logging
-├── tests/
-├── docs/                        # plan / progress / docker
-├── data/samples/
-├── docker-compose.yml
-├── Dockerfile
-└── requirements.txt
+│   ├── router/ · query_rewrite/ · reranker/
+│   ├── ingestion/ · indexing/ · memory/ · eval/
+│   ├── generation/ · services/ · config/
+├── data/eval/ · data/samples/
+├── evaluation/                  # Phase5 报告输出
+├── docs/
+└── tests/
 ```
 
 ## 7. 技术亮点
 
-- **Query Router**：知识库问题走检索链，闲聊直达 LLM，降低无效检索  
-- **Reranker**：宽召回 Top-20 → 语义重排 Top-5，提升上下文质量  
-- **模块化设计**：Router / Retriever / Reranker / LLM 解耦，便于替换后端  
-- **本地 LLM 部署**：Embedding + 生成走 Ollama，数据不出本机（重排可选云端）  
-- **可展示工程化**：FastAPI + Streamlit + Docker + 统一 JSON 日志  
+- **Query Router**：知识库走检索链，闲聊直达 LLM  
+- **Rewrite + Hybrid（可选）**：换问法更稳；BM25 默认关闭  
+- **Reranker**：宽召回 → 语义重排 Top-K  
+- **Memory / Trace / Session 模型**：可演示、可解释、会话级覆盖不落盘密钥  
+- **评测闭环**：固定题集 + Recall@K + RAGAS-style 报告  
+- **本地优先**：生成与向量默认 Ollama；重排可选 DashScope  
 
 ## 8. API
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | `/health` | 健康检查 |
-| POST | `/upload` | 上传 PDF（产品接口） |
-| POST | `/ingest` | 上传 PDF（兼容旧客户端） |
-| POST | `/chat` | 问答：`{"query"}` → `{"answer","sources"}` |
+| POST | `/upload` | 多格式上传入库 |
+| POST | `/chat` | 问答（可带 conversation_id / session 模型字段） |
+| GET/POST | `/session/models` | Session 模型默认值 / 绑定 Embedding |
 | GET | `/documents` | 文档列表 |
 | DELETE | `/documents/{doc_id}` | 删除文档 |
 | POST | `/reset` | 清空索引 |
@@ -196,25 +190,17 @@ enterprise-rag/
 ## 9. 配置管理
 
 全部通过 `.env` / 环境变量，由 `src/config/settings.py` 统一读取。  
-**禁止**在业务代码中硬编码 API Key、模型名或路径。
+**禁止**在业务代码中硬编码 API Key。Session UI **不会**把 Key 写回 `.env`。
 
-| 变量 | 含义 |
-| --- | --- |
-| `OLLAMA_BASE_URL` | Ollama 地址 |
-| `LLM_MODEL` / `EMBED_MODEL` | 生成 / 向量模型 |
-| `VECTOR_DB_PATH` | Chroma 路径 |
-| `DASHSCOPE_API_KEY` | 重排 Key |
-| `RERANKER_BACKEND` | dashscope / lexical / … |
-| `USE_QUERY_ROUTER` | 意图路由开关 |
-| `API_BASE_URL` | UI 访问 API 的地址 |
-| `LOG_LEVEL` | 日志级别 |
+常用变量：`OLLAMA_BASE_URL`、`LLM_MODEL`、`EMBED_MODEL`、`DASHSCOPE_API_KEY`、`RERANKER_BACKEND`、`USE_BM25`、`USE_QUERY_REWRITE`、`ENABLE_OCR` 等（见 `.env.example`）。
 
 ## 10. 相关文档
 
-- [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) — 最终架构图  
-- [`docs/progress.md`](docs/progress.md) — 分阶段进度  
-- [`docs/development_plan.md`](docs/development_plan.md) — 开发计划  
-- [`docs/docker.md`](docs/docker.md) — Docker / Ollama 说明  
+- [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) — 架构图  
+- [`docs/progress.md`](docs/progress.md) — 进度  
+- [`docs/development_plan.md`](docs/development_plan.md) — 开发计划（含 Phase6 Future Work）  
+- [`docs/eval.md`](docs/eval.md) — 评测操作  
+- [`docs/docker.md`](docs/docker.md) — Docker / Ollama  
 
 ---
 
@@ -222,28 +208,43 @@ enterprise-rag/
 
 ## 1. Overview (EN)
 
-Enterprise PDFs should not be answered by hallucinating chatbots.  
-**Enterprise RAG** is a local-first service: ingest PDFs → route by intent → retrieve + rerank → generate with Ollama → return **citable sources**.
+Enterprise documents should not be answered by hallucinating chatbots.  
+**Enterprise RAG** is a local-first service: multi-format ingest → route by intent → optional rewrite / hybrid retrieve + rerank → generate with Ollama → return **citable sources** and an Answer Trace.
+
+**Status:** Phases 1–4 + Enhancement Steps 1–4 done · Phase5 Evaluation done · **Phase6 (cloud LLM/Embed + session API key) = Future Work**.  
+Sample **Recall@5 ≈ 91.7%** (depends on your local index); see [`docs/eval.md`](docs/eval.md).
 
 ## 2. Architecture (EN)
 
 ```text
 User → Query Router
-        → knowledge: Retriever → Reranker → Prompt → Ollama
-        → casual: Ollama
+        → knowledge: Rewrite? → Dense[/Hybrid] → Rerank → Prompt(original+Memory) → Ollama
+        → casual: Ollama (+ Memory)
 ```
 
-See [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) for diagrams.
+Ingest: multi-format → convert → load → tables/OCR → chunk → embed → Chroma (+ BM25 store).
 
 ## 3. Tech Stack (EN)
 
-LangChain · Ollama · Chroma · DashScope Reranker · FastAPI · Streamlit · Docker · pydantic-settings
+LangChain · Ollama · Chroma · DashScope Reranker · FastAPI · Streamlit · Docker · pydantic-settings · CLI eval
 
 ## 4. Features (EN)
 
-- PDF upload & indexing  
-- Smart Q&A with Query Router  
-- Source citations in API & Streamlit UI  
+- Multi-format upload (pdf/doc/ppt/md/txt) with optional Office convert, table Markdown, OCR  
+- Query Router, Memory, Query Rewrite, optional BM25 Hybrid, Reranker  
+- Streamlit workspace: Trace, session model overrides (no `.env` write)  
+- Evaluation: Recall@K + RAGAS-style metrics via CLI  
+
+### Demo screenshots
+
+| Scene | Screenshot |
+| --- | --- |
+| Knowledge upload / indexed docs | ![Workspace upload](docs/demo/01_workspace_upload.png) |
+| Q&A + sources | ![Q&A with sources](docs/demo/02_qa_sources.png) |
+| Answer Trace / confidence | ![Answer Trace](docs/demo/03_answer_trace.png) |
+| Phase5 eval snapshot | ![Eval summary](docs/demo/04_eval_summary.png) |
+
+Walkthrough: [`docs/demo_script.md`](docs/demo_script.md). Re-capture: `python scripts/capture_demo_screenshots.py` (optional `playwright`).
 
 ## 5. Run (EN)
 
@@ -251,8 +252,11 @@ LangChain · Ollama · Chroma · DashScope Reranker · FastAPI · Streamlit · D
 pip install -r requirements.txt
 copy .env.example .env
 ollama pull qwen2.5:7b && ollama pull nomic-embed-text
+python -m apps.cli.main ingest-dir data/samples
 uvicorn apps.api.main:app --host 127.0.0.1 --port 8000
 streamlit run apps/web/streamlit_app.py
+# eval:
+python -m apps.cli.main eval
 # or
 docker compose up --build
 ```
@@ -261,20 +265,20 @@ Host Ollama is recommended; see [`docs/docker.md`](docs/docker.md).
 
 ## 6. Layout (EN)
 
-`apps/` (API + Streamlit) · `src/router|reranker|services|...` · `docs/` · `tests/`
+`apps/` (API + Streamlit + CLI) · `src/router|query_rewrite|reranker|memory|eval|...` · `docs/` · `evaluation/` · `tests/`
 
 ## 7. Highlights (EN)
 
-Query Router · semantic Reranker · modular pipelines · local LLM · demo-ready packaging
+Observable RAG pipeline · modular retrieval enhancements · session-safe model overrides · reproducible eval reports · local-first defaults
 
 ## 8. API
 
-Same table as Chinese section above. Chat body: `{"query":"..."}` → `{"answer","sources"}`.
+Same table as Chinese section. Chat: `{"query":"..."}` → `{"answer","sources",...}`. Optional session model fields and `conversation_id`.
 
 ## 9. Config (EN)
 
-All secrets/paths/models via `.env` — no hardcoding in application code.
+All secrets/paths/models via `.env` — no hardcoding; UI session overrides are memory-only.
 
 ## 10. Docs (EN)
 
-[`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · [`docs/progress.md`](docs/progress.md) · [`docs/docker.md`](docs/docker.md)
+[`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · [`docs/progress.md`](docs/progress.md) · [`docs/eval.md`](docs/eval.md) · [`docs/docker.md`](docs/docker.md) · [`docs/development_plan.md`](docs/development_plan.md)

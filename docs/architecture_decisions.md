@@ -1,37 +1,43 @@
-# Architecture Decision Records
+# 架构决策记录（ADR）
 
-## ADR-1: Local-first models (Ollama)
+## ADR-1：本地优先模型（Ollama）
 
-**Decision**: Default LLM/Embedding to Ollama (`qwen2.5:7b`, `nomic-embed-text`).
+**决策**：默认 LLM / Embedding 使用 Ollama（如 `qwen2.5:7b`、`nomic-embed-text`）。
 
-**Why**: Enterprise demos and compliance narratives require data-not-leaving-host. Cloud providers remain possible later via a gateway abstraction, but local is the default path for this project.
+**原因**：企业演示与合规叙事需要「数据尽量不出本机」。云厂商可通过后续网关扩展（Phase6 Future Work），但本项目默认走本地路径。
 
-## ADR-2: Hybrid retrieval (Dense + BM25 + RRF)
+## ADR-2：Hybrid 检索（Dense + BM25 + RRF）
 
-**Decision**: Recall with Chroma dense search and BM25, fuse with Reciprocal Rank Fusion, then cut to `TOP_K` after rerank.
+**决策**：Dense（Chroma）与 BM25 召回后用 Reciprocal Rank Fusion 融合，再经 Rerank 截断到 `TOP_K`。BM25 默认关闭，演示可开。
 
-**Why**: Dense retrieval misses exact tokens (policy numbers, product names). BM25 recovers lexical hits. RRF is robust without score calibration.
+**原因**：纯向量检索容易漏精确词（制度数字、产品名）；BM25 补齐词法命中；RRF 无需复杂分值对齐。
 
-## ADR-3: CrossEncoder rerank instead of LLM rerank
+## ADR-3：Reranker 优先语义 API，而非「每个候选调一次 LLM」
 
-**Decision**: Use `BAAI/bge-reranker-base` (sentence-transformers CrossEncoder). Do **not** call the LLM once per candidate.
+**决策**：默认 DashScope `gte-rerank-v2`；失败回退 Lexical；可选本地 CrossEncoder。
 
-**Why**: Project B's LLM-per-chunk rerank is accurate in contests but too slow/expensive for production. CrossEncoder gives most of the quality at far lower latency/cost.
+**原因**：对每个 chunk 调生成模型做重排成本高、延迟大，不适合产品演示主路径。
 
-## ADR-4: FastAPI core + thin Gradio
+## ADR-4：FastAPI 为核心 + 薄 UI
 
-**Decision**: Business logic lives in services; FastAPI is the system boundary; Gradio only calls HTTP APIs.
+**决策**：业务逻辑在 `services`；FastAPI 为系统边界；Streamlit / Gradio 只调 HTTP。
 
-**Why**: Resume-ready systems must be integrable. UI demos are not backends.
+**原因**：可集成、可测试；UI 不能替代后端。
 
-## ADR-5: Structured answers + citation validation
+## ADR-5：可引用答案 + Trace
 
-**Decision**: Chat returns JSON (`final_answer`, `reasoning_summary`, `relevant_pages`, `citations`) and drops hallucinated page numbers.
+**决策**：产品接口返回 `answer` + `sources`，并附带 Answer Trace / 置信度（无密钥、无完整 Prompt 泄露）。
 
-**Why**: Auditable outputs matter more than fluent prose in enterprise knowledge bases.
+**原因**：企业知识库更看重可审计，而不是只有流畅文案。
 
-## ADR-6: Document-scoped upsert, not wipe-and-rebuild
+## ADR-6：按文档 upsert，禁止默认整库清空
 
-**Decision**: Ingest upserts by `doc_id`; reset is an explicit operator action.
+**决策**：入库按 `doc_id` 覆盖更新；整库 reset 必须显式操作。
 
-**Why**: Multi-document knowledge bases cannot survive Project A's full `rmtree` ingest pattern.
+**原因**：多文档知识库不能依赖「每次 ingest 删光重建」。
+
+## ADR-7：Session 模型覆盖不写回 `.env`
+
+**决策**：UI 可改 LLM / Embedding / Reranker backend，仅当前 session；Clear chat 保留覆盖；浏览器刷新回默认。API Key 不进 UI 持久化（Phase6 Future Work 另议）。
+
+**原因**：演示灵活且避免密钥进仓库。

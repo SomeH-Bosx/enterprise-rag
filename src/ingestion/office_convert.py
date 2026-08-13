@@ -1,8 +1,8 @@
-"""Explicit legacy Office conversion (.ppt→.pptx, .doc→.docx).
+"""显式 legacy Office 转换（.ppt→.pptx、.doc→.docx）。
 
-Primary engine: Microsoft Office COM (demo machines usually have Office).
-Fallback: LibreOffice soffice.
-Conversion is a first-class pipeline step surfaced to API/UI.
+主引擎：Microsoft Office COM（演示机通常已装 Office）。
+回退：LibreOffice soffice。
+转换是一等公民流水线步骤，会暴露给 API/UI。
 """
 
 from __future__ import annotations

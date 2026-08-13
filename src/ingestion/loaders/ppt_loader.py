@@ -1,10 +1,9 @@
-"""PPTX / legacy PPT loaders.
+"""PPTX / legacy PPT Loader。
 
-Legacy .ppt is converted to .pptx first (explicit Office/LibreOffice step),
-then parsed with python-pptx.
+Legacy `.ppt` 先转为 `.pptx`（显式 Office/LibreOffice），再用 python-pptx 解析。
 
-Step3.6: table shapes → Markdown. Empty slides are skipped with a log
-(OCR render for PPTX is not wired; PDF remains the OCR target).
+Step3.6：表格形状 → Markdown。空页跳过并打日志
+（PPTX 未接 OCR 渲染；OCR 目标仍以 PDF 为主）。
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Query intent classifier: rules first, optional LLM fallback."""
+"""查询意图分类：规则优先，可选 LLM 回退。"""
 
 from __future__ import annotations
 

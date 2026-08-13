@@ -1,4 +1,4 @@
-"""Plain-text / Markdown loaders."""
+"""纯文本 / Markdown Loader。"""
 
 from __future__ import annotations
 

@@ -1,3 +1,8 @@
+"""Enterprise RAG FastAPI 入口（产品 API）。
+
+提供上传、问答、健康检查、Session 模型配置等 HTTP 边界；业务逻辑在 `src/services`。
+"""
+
 from __future__ import annotations
 
 import shutil
@@ -17,6 +22,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.config.logging import bind_request_id, get_logger, setup_logging
+from src.config.session_models import SessionModelOverrides, defaults_from_settings
 from src.config.settings import get_settings
 from src.generation.llm_gateway import check_ollama_health
 from src.generation.schemas import (
@@ -39,7 +45,7 @@ logger = get_logger("api")
 app = FastAPI(
     title="Enterprise RAG API",
     version="1.1.0",
-    description="Phase4 product API: upload PDF, chat with sources, health.",
+    description="产品 API：多格式上传、带引用来源的问答、健康检查、Session 模型配置。",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -59,12 +65,17 @@ qa_service = QAService(
 
 
 class ChatRequest(BaseModel):
-    """Accepts Phase4 `query` or legacy `question`; optional conversation_id for memory."""
+    """接受 Phase4 的 `query` 或旧字段 `question`；可选 `conversation_id` 启用 Memory。"""
 
     query: str | None = Field(default=None, min_length=1)
     question: str | None = Field(default=None, min_length=1)
     structured: bool = False
     conversation_id: str | None = Field(default=None)
+    # Step4 session model overrides (no API keys)
+    llm_model: str | None = Field(default=None)
+    embed_model: str | None = Field(default=None)
+    reranker_backend: str | None = Field(default=None)
+    session_models: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
     def require_text(self) -> "ChatRequest":
@@ -76,6 +87,24 @@ class ChatRequest(BaseModel):
     @property
     def text(self) -> str:
         return (self.query or self.question or "").strip()
+
+    def model_overrides(self) -> SessionModelOverrides:
+        nested = self.session_models if isinstance(self.session_models, dict) else {}
+        return SessionModelOverrides.from_mapping(
+            {
+                "llm_model": self.llm_model or nested.get("llm_model"),
+                "embed_model": self.embed_model or nested.get("embed_model"),
+                "reranker_backend": self.reranker_backend or nested.get("reranker_backend"),
+            }
+        )
+
+
+class SessionModelsRequest(BaseModel):
+    """Bind session embed (and echo other model choices). Never accepts API keys."""
+
+    llm_model: str | None = None
+    embed_model: str | None = None
+    reranker_backend: str | None = None
 
 
 class CompareRequest(BaseModel):
@@ -283,10 +312,17 @@ def _to_product_response(answer: ChatAnswer | dict[str, Any]) -> ProductChatResp
             if answer.get("use_hybrid") is not None
             else (trace.use_hybrid if trace else False)
         ),
+        session_models=answer.get("session_models")
+        if isinstance(answer.get("session_models"), dict)
+        else {},
     )
 
 
-async def _ingest_upload(file: UploadFile) -> dict[str, Any]:
+async def _ingest_upload(
+    file: UploadFile,
+    *,
+    model_overrides: SessionModelOverrides | None = None,
+) -> dict[str, Any]:
     if not file.filename:
         return {
             "ok": False,
@@ -313,7 +349,7 @@ async def _ingest_upload(file: UploadFile) -> dict[str, Any]:
         dest = Path(settings.upload_cache_dir) / Path(file.filename).name
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(tmp_path, dest)
-        result = ingest_service.ingest_file(dest)
+        result = ingest_service.ingest_file(dest, model_overrides=model_overrides)
         message = "Document ingested successfully"
         conversion = result.get("conversion") or {}
         if conversion.get("converted"):
@@ -330,6 +366,7 @@ async def _ingest_upload(file: UploadFile) -> dict[str, Any]:
             "file_type": result.get("file_type"),
             "conversion": conversion,
             "pipeline_steps": result.get("pipeline_steps") or [],
+            "session_models": result.get("session_models") or {},
             "message": message,
             **{
                 k: v
@@ -342,6 +379,7 @@ async def _ingest_upload(file: UploadFile) -> dict[str, Any]:
                     "file_type",
                     "conversion",
                     "pipeline_steps",
+                    "session_models",
                 }
             },
         }
@@ -411,7 +449,9 @@ def health():
             "embed": settings.embed_model,
             "reranker": settings.reranker_model,
             "reranker_backend": settings.reranker_backend,
+            "bound_embed_model": ingest_service.vector_store.settings.embed_model,
         },
+        "session_model_defaults": defaults_from_settings(settings),
         "flags": {
             "use_query_router": settings.use_query_router,
             "use_reranker": settings.use_reranker,
@@ -423,10 +463,22 @@ def health():
 
 
 @app.post("/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(
+    file: UploadFile = File(...),
+    embed_model: str | None = None,
+    llm_model: str | None = None,
+    reranker_backend: str | None = None,
+):
     """Product upload: multi-format → Loader → Chunk → Embed → Vector DB."""
     bind_request_id()
-    result = await _ingest_upload(file)
+    overrides = SessionModelOverrides.from_mapping(
+        {
+            "embed_model": embed_model,
+            "llm_model": llm_model,
+            "reranker_backend": reranker_backend,
+        }
+    )
+    result = await _ingest_upload(file, model_overrides=overrides)
     if not result.get("ok"):
         return JSONResponse(status_code=400, content=result)
     logger.info(
@@ -456,24 +508,61 @@ async def ingest(file: UploadFile = File(...)):
     }
 
 
+@app.get("/session/models")
+def get_session_model_defaults():
+    """Return .env defaults + currently bound vector-store embed (no secrets)."""
+    return {
+        "defaults": defaults_from_settings(settings),
+        "bound_embed_model": ingest_service.vector_store.settings.embed_model,
+        "persisted_to_env": False,
+        "note": "Overrides are session-only; Clear chat keeps them; browser refresh resets UI.",
+    }
+
+
+@app.post("/session/models")
+def apply_session_models(body: SessionModelsRequest):
+    """
+    Apply session model choices.
+    - embed_model: rebind vector-store embedding for subsequent upload/chat retrieval
+    - llm/reranker: acknowledged for clients (applied per /chat request)
+    Never writes .env; never accepts API keys.
+    """
+    bind_request_id()
+    overrides = SessionModelOverrides.from_mapping(body.model_dump())
+    bind_info = ingest_service.bind_session_embed(overrides.embed_model)
+    effective = overrides.apply(settings)
+    return {
+        "ok": True,
+        "persisted_to_env": False,
+        "defaults": defaults_from_settings(settings),
+        "session_models": overrides.to_public_dict(effective),
+        "embed_binding": bind_info,
+    }
+
+
 @app.post("/chat", response_model=ProductChatResponse)
 def chat(body: ChatRequest):
     """
-    Chat with optional Conversation Memory:
-    - input: {\"query\": \"...\", \"conversation_id\": \"...\"?}
-    - output: {\"answer\", \"sources\", \"conversation_id\", ...}
+    Chat with optional Conversation Memory + session model overrides:
+    - input: {\"query\": \"...\", \"conversation_id\": \"...?\", \"llm_model\": \"...?\"}
+    - output: {\"answer\", \"sources\", \"conversation_id\", \"session_models\", ...}
     """
     bind_request_id()
+    overrides = body.model_overrides()
     logger.info(
         "chat_request",
         query_preview=body.text[:120],
         structured=body.structured,
         conversation_id=body.conversation_id,
+        session_override=overrides.has_any(),
     )
+    if overrides.embed_model:
+        ingest_service.bind_session_embed(overrides.embed_model)
     answer = qa_service.ask(
         body.text,
         structured=body.structured,
         conversation_id=body.conversation_id,
+        model_overrides=overrides,
     )
     product = _to_product_response(answer)
     logger.info(

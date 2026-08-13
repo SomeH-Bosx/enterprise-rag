@@ -1,4 +1,5 @@
 class RagError(Exception):
+    """RAG 业务异常基类。"""
     def __init__(self, message: str, error_code: str = "RAG_ERROR"):
         super().__init__(message)
         self.message = message

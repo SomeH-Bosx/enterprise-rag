@@ -110,3 +110,5 @@ class ProductChatResponse(BaseModel):
     rewritten_query: str = ""
     rewrite_method: str = ""
     use_hybrid: bool = False
+    # Step4 session model overrides (echo; never includes secrets)
+    session_models: dict[str, Any] = Field(default_factory=dict)

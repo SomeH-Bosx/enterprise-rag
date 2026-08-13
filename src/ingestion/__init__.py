@@ -1,1 +1,1 @@
-"""Document ingestion helpers."""
+"""文档入库相关辅助模块。"""
