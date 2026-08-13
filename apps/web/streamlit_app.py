@@ -258,7 +258,7 @@ def _render_chunk_list(items: list[dict[str, Any]], *, limit: int = 8) -> None:
 
 def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
     st.markdown('<p class="wk-col-title">回答轨迹</p>', unsafe_allow_html=True)
-    st.caption("可观测 RAG · 随侧栏滚动（与聊天区独立）")
+    # st.caption("可观测 RAG · 随侧栏滚动（与聊天区独立）")
 
     if not trace_payload:
         st.info("提问后可在此查看 Router → Retriever → Reranker → LLM。")
