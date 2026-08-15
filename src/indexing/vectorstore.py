@@ -24,6 +24,8 @@ class VectorStoreManager:
                     base_url=self.settings.ollama_base_url,
                     model=self.settings.embed_model,
                 ),
+                # 默认用的是 cosine 距离，显式指定使用 L2 距离
+                # collection_metadata={"hnsw:space": "l2"},
             )
         return self._store
 

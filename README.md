@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | 1 | [项目介绍](#1-项目介绍) | [Overview](#1-overview-en) |
 | 2 | [系统架构图](#2-系统架构图) | [Architecture](#2-architecture-en) |
-| 3 | [技术栈](#3-技术栈) | [Tech Stack](#3-tech-stack-en) |
+| 3 | [技术栈](#3-技术栈)（含[模型与算法一览](#31-各阶段模型与算法一览)） | [Tech Stack](#3-tech-stack-en)（[models table](#31-models--algorithms-en)） |
 | 4 | [功能展示](#4-功能展示) | [Features](#4-features-en) |
 | 5 | [运行方式](#5-运行方式) | [Run](#5-run-en) |
 | 6 | [项目结构](#6-项目结构说明) | [Layout](#6-layout-en) |
@@ -70,6 +70,29 @@ Query Router（规则 + LLM）
 | 配置 | `.env` + pydantic-settings |
 | 部署 | Docker / docker-compose |
 | 评测 | CLI Recall@K + RAGAS-style 轻量指标 |
+
+### 3.1 各阶段模型与算法一览
+
+默认值以 `.env.example` 为准；Docker 下 Ollama 常经 `host.docker.internal:11434`，UI 经 `http://api:8000`。
+
+| 阶段 | 角色 | 模型 / 算法 | Host | Port | URL / 接入 |
+| --- | --- | --- | --- | --- | --- |
+| 生成 | 回答、闲聊 | Ollama **`qwen2.5:7b`**（`LLM_MODEL`）；`LLM_TEMPERATURE=0.1` | `127.0.0.1` | `11434` | `http://127.0.0.1:11434`（`OLLAMA_BASE_URL`） |
+| 意图路由 | 歧义时 LLM 分类 | 同上 Ollama LLM（规则优先，`QUERY_ROUTER_MODE=rules_llm`） | `127.0.0.1` | `11434` | 同上 |
+| Query Rewrite | 检索问改写（可选） | 同上 Ollama LLM（`QUERY_REWRITE_MODE=rules_llm`）；失败回退记忆拼接 | `127.0.0.1` | `11434` | 同上 |
+| Embedding | Dense 入库 + 近邻召回 | Ollama **`nomic-embed-text`**（`EMBED_MODEL`） | `127.0.0.1` | `11434` | 同上 |
+| 向量库 | Dense 近邻存储 | **Chroma**（`VECTOR_DB_PATH=./chroma_db`）；distance→`1/(1+d)` 映射 Trace | 进程内 | — | 本地目录，无独立 HTTP |
+| 稀疏检索 | BM25（Hybrid 可选，默认关） | **BM25Okapi**（`rank_bm25`）+ `bm25_store.json`；与 Dense 经 **RRF**（\(1/(60+\mathrm{rank})\)）融合 | 本地文件 | — | `BM25_STORE_PATH` |
+| 语义重排 | 默认精排 | DashScope **`gte-rerank-v2`**（`DASHSCOPE_RERANK_MODEL`） | 云端 | — | DashScope API + `DASHSCOPE_API_KEY` |
+| 本地重排 | 备选 | CrossEncoder **`BAAI/bge-reranker-base`**（`RERANKER_MODEL`，Hugging Face） | 本机 | — | `RERANKER_BACKEND=cross_encoder` |
+| 回退重排 | Key/API 失败 | **Lexical** 词重叠打分 | 进程内 | — | `RERANKER_BACKEND=lexical` 或自动 fallback |
+| 切块 | 入库 | `RecursiveCharacterTextSplitter`（`CHUNK_SIZE=1000`，`CHUNK_OVERLAP=150`） | 进程内 | — | — |
+| OCR（可选） | 低文本页 | 系统 **Tesseract** + pytesseract（`OCR_LANG=chi_sim+eng`） | 本机 | — | — |
+| 产品 API | HTTP | FastAPI | `127.0.0.1` | `8000` | `http://127.0.0.1:8000`（`API_BASE_URL`） |
+| 主 UI | Demo | Streamlit Knowledge Workspace | `127.0.0.1` | `8501` | `http://127.0.0.1:8501` |
+| 薄客户端 | 非主路径 | Gradio | `127.0.0.1` | `7860` | `http://127.0.0.1:7860` |
+
+**检索口径简述：** Dense = Embedding 近邻召回（宽召回 `RECALL_TOP_N=20`）→（可选 Hybrid）→ Rerank 截断 `TOP_K=5` → LLM。BM25 **不是** Embedding 模型，与 `nomic-embed-text` 是并列召回路。
 
 ## 4. 功能展示
 
@@ -227,6 +250,29 @@ Ingest: multi-format → convert → load → tables/OCR → chunk → embed →
 ## 3. Tech Stack (EN)
 
 LangChain · Ollama · Chroma · DashScope Reranker · FastAPI · Streamlit · Docker · pydantic-settings · CLI eval
+
+### 3.1 Models & algorithms (EN)
+
+Defaults from `.env.example`. Docker often uses `host.docker.internal:11434` for Ollama and `http://api:8000` for the UI.
+
+| Stage | Role | Model / algorithm | Host | Port | URL / access |
+| --- | --- | --- | --- | --- | --- |
+| Generation | Answer / casual | Ollama **`qwen2.5:7b`** (`LLM_MODEL`); `LLM_TEMPERATURE=0.1` | `127.0.0.1` | `11434` | `http://127.0.0.1:11434` (`OLLAMA_BASE_URL`) |
+| Intent router | LLM on ambiguous queries | Same Ollama LLM (rules first, `QUERY_ROUTER_MODE=rules_llm`) | `127.0.0.1` | `11434` | same |
+| Query rewrite | Retrieval query only (optional) | Same Ollama LLM; fallback = memory concat | `127.0.0.1` | `11434` | same |
+| Embedding | Dense ingest + recall | Ollama **`nomic-embed-text`** (`EMBED_MODEL`) | `127.0.0.1` | `11434` | same |
+| Vector DB | Dense ANN store | **Chroma** (`./chroma_db`); Trace maps distance → `1/(1+d)` | in-process | — | local path, no HTTP |
+| Sparse retrieve | BM25 (Hybrid optional, default off) | **BM25Okapi** + `bm25_store.json`; fuse with Dense via **RRF** \(1/(60+\mathrm{rank})\) | local file | — | `BM25_STORE_PATH` |
+| Semantic rerank | Default | DashScope **`gte-rerank-v2`** | cloud | — | DashScope API + `DASHSCOPE_API_KEY` |
+| Local rerank | Optional | CrossEncoder **`BAAI/bge-reranker-base`** (Hugging Face) | local | — | `RERANKER_BACKEND=cross_encoder` |
+| Fallback rerank | No key / API fail | **Lexical** overlap scorer | in-process | — | `lexical` or auto fallback |
+| Chunking | Ingest | `RecursiveCharacterTextSplitter` (1000 / 150) | in-process | — | — |
+| OCR (optional) | Low-text pages | **Tesseract** + pytesseract | local | — | — |
+| Product API | HTTP | FastAPI | `127.0.0.1` | `8000` | `http://127.0.0.1:8000` |
+| Primary UI | Demo | Streamlit | `127.0.0.1` | `8501` | `http://127.0.0.1:8501` |
+| Thin client | Non-primary | Gradio | `127.0.0.1` | `7860` | `http://127.0.0.1:7860` |
+
+**Retrieval in one line:** Dense ANN (`RECALL_TOP_N=20`) → optional Hybrid → Rerank (`TOP_K=5`) → LLM. BM25 is **not** an embedding model; it runs beside `nomic-embed-text`.
 
 ## 4. Features (EN)
 
