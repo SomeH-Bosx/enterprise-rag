@@ -42,11 +42,13 @@ User
 Query Router（规则 + LLM）
   ├── knowledge_query
   │     ↓
-  │   Query Rewrite（可选）→ Dense[/Hybrid BM25] → Reranker → Prompt(原问+Memory) → Ollama
+  │   Query Rewrite（可选）
+  │     → Dense | BM25 | Hybrid(RRF)   ← Streamlit Session 可切换
+  │     → Reranker → Prompt(原问 + Memory?) → Ollama
   │     → Answer + Sources + Trace
   └── casual_chat
         ↓
-      Ollama（跳过检索，可带 Memory）
+      Ollama（跳过检索；Memory 可关）
 ```
 
 入库：
@@ -82,7 +84,7 @@ Query Router（规则 + LLM）
 | Query Rewrite | 检索问改写（可选） | 同上 Ollama LLM（`QUERY_REWRITE_MODE=rules_llm`）；失败回退记忆拼接 | `127.0.0.1` | `11434` | 同上 |
 | Embedding | Dense 入库 + 近邻召回 | Ollama **`nomic-embed-text`**（`EMBED_MODEL`） | `127.0.0.1` | `11434` | 同上 |
 | 向量库 | Dense 近邻存储 | **Chroma**（`VECTOR_DB_PATH=./chroma_db`）；distance→`1/(1+d)` 映射 Trace | 进程内 | — | 本地目录，无独立 HTTP |
-| 稀疏检索 | BM25（Hybrid 可选，默认关） | **BM25Okapi**（`rank_bm25`）+ `bm25_store.json`；与 Dense 经 **RRF**（\(1/(60+\mathrm{rank})\)）融合 | 本地文件 | — | `BM25_STORE_PATH` |
+| 稀疏检索 | BM25 / Hybrid | **BM25Okapi** + RRF；`RETRIEVAL_MODE=dense\|bm25\|hybrid`（空则由 `USE_BM25` 推导；UI 可切换） | 本地文件 | — | `BM25_STORE_PATH` |
 | 语义重排 | 默认精排 | DashScope **`gte-rerank-v2`**（`DASHSCOPE_RERANK_MODEL`） | 云端 | — | DashScope API + `DASHSCOPE_API_KEY` |
 | 本地重排 | 备选 | CrossEncoder **`BAAI/bge-reranker-base`**（`RERANKER_MODEL`，Hugging Face） | 本机 | — | `RERANKER_BACKEND=cross_encoder` |
 | 回退重排 | Key/API 失败 | **Lexical** 词重叠打分 | 进程内 | — | `RERANKER_BACKEND=lexical` 或自动 fallback |
@@ -92,16 +94,17 @@ Query Router（规则 + LLM）
 | 主 UI | Demo | Streamlit Knowledge Workspace | `127.0.0.1` | `8501` | `http://127.0.0.1:8501` |
 | 薄客户端 | 非主路径 | Gradio | `127.0.0.1` | `7860` | `http://127.0.0.1:7860` |
 
-**检索口径简述：** Dense = Embedding 近邻召回（宽召回 `RECALL_TOP_N=20`）→（可选 Hybrid）→ Rerank 截断 `TOP_K=5` → LLM。BM25 **不是** Embedding 模型，与 `nomic-embed-text` 是并列召回路。
+**检索口径简述：** `RETRIEVAL_MODE` 三选一——**Dense**（向量近邻）/ **BM25**（关键词）/ **Hybrid**（Dense+BM25 再 RRF）。宽召回 `RECALL_TOP_N=20` → Rerank 截断 `TOP_K=5` → LLM。BM25 **不是** Embedding 模型。
 
 ## 4. 功能展示
 
 1. **多格式上传**：pdf / doc(x) / ppt(x) / md / txt；legacy Office 可显式转换  
-2. **智能问答**：Query Router 分流知识库 / 闲聊；可选 Query Rewrite、Hybrid（BM25 默认关）  
-3. **引用来源 + Trace**：sources、置信度、原问/改写问、Hybrid 开关  
-4. **Conversation Memory**：多轮窗口；Clear chat 开新会话  
-5. **Session 模型覆盖**：LLM / Embedding / Reranker backend 仅影响当前浏览器会话，不写回 `.env`  
-6. **评测**：`python -m apps.cli.main eval`（见 [`docs/eval.md`](docs/eval.md)）
+2. **智能问答**：Query Router 分流知识库 / 闲聊；可选 Query Rewrite  
+3. **检索模式（Session）**：Dense / BM25 / Hybrid，侧栏切换，不写 `.env`  
+4. **引用来源 + Trace**：sources、置信度、原问/改写问、检索模式  
+5. **Conversation Memory**：多轮窗口；侧栏可开关；Clear chat 开新会话  
+6. **Session 模型覆盖**：LLM / Embedding / Reranker backend 仅当前浏览器会话  
+7. **评测**：`python -m apps.cli.main eval`（见 [`docs/eval.md`](docs/eval.md)）
 
 ### Demo 截图
 
@@ -190,11 +193,12 @@ enterprise-rag/
 ## 7. 技术亮点
 
 - **Query Router**：知识库走检索链，闲聊直达 LLM  
-- **Rewrite + Hybrid（可选）**：换问法更稳；BM25 默认关闭  
-- **Reranker**：宽召回 → 语义重排 Top-K  
-- **Memory / Trace / Session 模型**：可演示、可解释、会话级覆盖不落盘密钥  
+- **检索三模式**：Dense / BM25 / Hybrid(RRF)，Session UI 可切换  
+- **Rewrite + Memory**：换问法更稳；Memory 可开关  
+- **Reranker**：宽召回 → 语义重排 Top-K（DashScope，可回退）  
+- **Trace / Session 模型**：可解释、会话级覆盖不落盘密钥  
 - **评测闭环**：固定题集 + Recall@K + RAGAS-style 报告  
-- **本地优先**：生成与向量默认 Ollama；重排可选 DashScope  
+- **本地优先**：生成与向量默认 Ollama  
 
 ## 8. API
 
@@ -214,7 +218,7 @@ enterprise-rag/
 全部通过 `.env` / 环境变量，由 `src/config/settings.py` 统一读取。  
 **禁止**在业务代码中硬编码 API Key。Session UI **不会**把 Key 写回 `.env`。
 
-常用变量：`OLLAMA_BASE_URL`、`LLM_MODEL`、`EMBED_MODEL`、`DASHSCOPE_API_KEY`、`RERANKER_BACKEND`、`USE_BM25`、`USE_QUERY_REWRITE`、`ENABLE_OCR` 等（见 `.env.example`）。
+常用变量：`OLLAMA_BASE_URL`、`LLM_MODEL`、`EMBED_MODEL`、`DASHSCOPE_API_KEY`、`RERANKER_BACKEND`、`RETRIEVAL_MODE`、`USE_BM25`、`USE_CONVERSATION_MEMORY`、`USE_QUERY_REWRITE`、`ENABLE_OCR` 等（见 `.env.example`）。
 
 ## 10. 相关文档
 
@@ -241,11 +245,12 @@ Sample **Recall@5 ≈ 91.7%** (depends on your local index); see [`docs/eval.md`
 
 ```text
 User → Query Router
-        → knowledge: Rewrite? → Dense[/Hybrid] → Rerank → Prompt(original+Memory) → Ollama
-        → casual: Ollama (+ Memory)
+        → knowledge: Rewrite? → Dense|BM25|Hybrid(RRF) → Rerank → Prompt(original+Memory?) → Ollama
+        → casual: Ollama (Memory optional)
 ```
 
-Ingest: multi-format → convert → load → tables/OCR → chunk → embed → Chroma (+ BM25 store).
+Ingest: multi-format → convert → load → tables/OCR → chunk → embed → Chroma (+ BM25 store).  
+Session UI can switch retrieval mode and toggle Memory (no `.env` write). Full Mermaid: [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md).
 
 ## 3. Tech Stack (EN)
 
@@ -262,7 +267,7 @@ Defaults from `.env.example`. Docker often uses `host.docker.internal:11434` for
 | Query rewrite | Retrieval query only (optional) | Same Ollama LLM; fallback = memory concat | `127.0.0.1` | `11434` | same |
 | Embedding | Dense ingest + recall | Ollama **`nomic-embed-text`** (`EMBED_MODEL`) | `127.0.0.1` | `11434` | same |
 | Vector DB | Dense ANN store | **Chroma** (`./chroma_db`); Trace maps distance → `1/(1+d)` | in-process | — | local path, no HTTP |
-| Sparse retrieve | BM25 (Hybrid optional, default off) | **BM25Okapi** + `bm25_store.json`; fuse with Dense via **RRF** \(1/(60+\mathrm{rank})\) | local file | — | `BM25_STORE_PATH` |
+| Sparse retrieve | BM25 / Hybrid | **BM25Okapi** + RRF; `RETRIEVAL_MODE=dense\|bm25\|hybrid` (empty derives from `USE_BM25`; UI switchable) | local file | — | `BM25_STORE_PATH` |
 | Semantic rerank | Default | DashScope **`gte-rerank-v2`** | cloud | — | DashScope API + `DASHSCOPE_API_KEY` |
 | Local rerank | Optional | CrossEncoder **`BAAI/bge-reranker-base`** (Hugging Face) | local | — | `RERANKER_BACKEND=cross_encoder` |
 | Fallback rerank | No key / API fail | **Lexical** overlap scorer | in-process | — | `lexical` or auto fallback |
@@ -272,13 +277,13 @@ Defaults from `.env.example`. Docker often uses `host.docker.internal:11434` for
 | Primary UI | Demo | Streamlit | `127.0.0.1` | `8501` | `http://127.0.0.1:8501` |
 | Thin client | Non-primary | Gradio | `127.0.0.1` | `7860` | `http://127.0.0.1:7860` |
 
-**Retrieval in one line:** Dense ANN (`RECALL_TOP_N=20`) → optional Hybrid → Rerank (`TOP_K=5`) → LLM. BM25 is **not** an embedding model; it runs beside `nomic-embed-text`.
+**Retrieval in one line:** `RETRIEVAL_MODE` = **Dense** | **BM25** | **Hybrid** (RRF) → Rerank (`TOP_K=5`) → LLM. BM25 is **not** an embedding model.
 
 ## 4. Features (EN)
 
 - Multi-format upload (pdf/doc/ppt/md/txt) with optional Office convert, table Markdown, OCR  
-- Query Router, Memory, Query Rewrite, optional BM25 Hybrid, Reranker  
-- Streamlit workspace: Trace, session model overrides (no `.env` write)  
+- Query Router, Memory toggle, Query Rewrite, Dense/BM25/Hybrid retrieval, Reranker  
+- Streamlit workspace: Trace, session model overrides + retrieval mode (no `.env` write)  
 - Evaluation: Recall@K + RAGAS-style metrics via CLI  
 
 ### Demo screenshots
@@ -315,11 +320,11 @@ Host Ollama is recommended; see [`docs/docker.md`](docs/docker.md).
 
 ## 7. Highlights (EN)
 
-Observable RAG pipeline · modular retrieval enhancements · session-safe model overrides · reproducible eval reports · local-first defaults
+Observable RAG · Dense/BM25/Hybrid session switch · Memory toggle · Trace · session model overrides · reproducible Phase5 eval · local-first Ollama
 
 ## 8. API
 
-Same table as Chinese section. Chat: `{"query":"..."}` → `{"answer","sources",...}`. Optional session model fields and `conversation_id`.
+Same table as Chinese section. Chat: `{"query":"..."}` → `{"answer","sources",...}`. Optional `conversation_id`, `retrieval_mode`, `use_conversation_memory`, and session model fields.
 
 ## 9. Config (EN)
 
