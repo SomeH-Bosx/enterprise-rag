@@ -33,7 +33,7 @@ from src.memory import (
 )
 from src.query_rewrite import QueryRewriter, RewriteResult
 from src.reranker import CrossEncoderReranker
-from src.retrieval.hybrid import hybrid_retrieve
+from src.retrieval.hybrid import hybrid_retrieve, resolve_retrieval_mode
 from src.retrieval.reranker import dense_with_scores, naive_dense_only
 from src.router import QueryRouter, RouteResult
 from src.services.exceptions import EmptyQueryError, NoIndexError
@@ -64,6 +64,11 @@ class QAService:
         self._ask_lock = threading.RLock()
 
     def _ensure_index(self) -> None:
+        mode = resolve_retrieval_mode(self.settings)
+        if mode == "bm25":
+            if self.registry.count() == 0 or self.bm25_store.count() == 0:
+                raise NoIndexError()
+            return
         if self.registry.count() == 0 or self.vector_store.count() == 0:
             raise NoIndexError()
 
@@ -77,24 +82,17 @@ class QAService:
         )
 
     def retrieve_candidates(self, question: str, k: int | None = None) -> list[Document]:
-        """知识路径的宽召回。默认 Dense；`USE_BM25=true` 时 Dense+BM25 RRF（Step3.5，默认关）。"""
+        """知识路径宽召回：`RETRIEVAL_MODE`=dense|bm25|hybrid（空则由 USE_BM25 推导）。"""
         recall = self.settings.top_k if k is None else k
-        use_hybrid = bool(self.settings.use_bm25)
-        if use_hybrid:
-            return hybrid_retrieve(
-                question,
-                self.vector_store,
-                self.bm25_store,
-                doc_ids=None,
-                settings=self.settings,
-                use_bm25=True,
-                recall_top_n=recall,
-            )
-        return dense_with_scores(
+        mode = resolve_retrieval_mode(self.settings)
+        return hybrid_retrieve(
             question,
             self.vector_store,
-            k=recall,
+            self.bm25_store,
             doc_ids=None,
+            settings=self.settings,
+            retrieval_mode=mode,
+            recall_top_n=recall,
         )
 
     def retrieve_dense_scored(self, question: str, k: int | None = None) -> list[Document]:
@@ -113,10 +111,11 @@ class QAService:
         recall_k: int | None = None,
         top_n: int | None = None,
     ) -> tuple[list[Document], dict[str, Any]]:
-        """Phase2 / Step3.5：Dense[/Hybrid] 宽召回 → Reranker → Top-N（top_k）。"""
+        """Phase2 / Step3.5：Dense[/BM25/Hybrid] 宽召回 → Reranker → Top-N（top_k）。"""
         recall = recall_k if recall_k is not None else self.settings.recall_top_n
         final_n = top_n if top_n is not None else self.settings.top_k
-        use_hybrid = bool(self.settings.use_bm25)
+        retrieval_mode = resolve_retrieval_mode(self.settings)
+        use_hybrid = retrieval_mode == "hybrid"
 
         t0 = time.perf_counter()
         candidates = self.retrieve_candidates(question, k=recall)
@@ -125,6 +124,7 @@ class QAService:
             "retriever_done",
             recall_k=recall,
             candidate_count=len(candidates),
+            retrieval_mode=retrieval_mode,
             use_hybrid=use_hybrid,
             elapsed_ms=round(recall_ms, 2),
         )
@@ -144,11 +144,12 @@ class QAService:
             top_scores=top_scores,
             elapsed_ms=round(rerank_ms, 2),
         )
-        mode = "hybrid_rerank" if use_hybrid else "dense_rerank"
+        mode = f"{retrieval_mode}_rerank"
         meta = {
             "mode": mode,
             "use_reranker": True,
             "use_hybrid": use_hybrid,
+            "retrieval_mode": retrieval_mode,
             "recall_k": recall,
             "top_n": final_n,
             "candidate_count": len(candidates),
@@ -166,23 +167,24 @@ class QAService:
         use_reranker: bool | None = None,
         naive: bool = False,
     ) -> tuple[list[Document], dict[str, Any]]:
-        """对外检索 API。naive/Phase1=仅 Dense Top-K；Phase2/Step3.5=宽召回→重排→Top-N。"""
+        """对外检索 API。naive/Phase1=仅 Dense Top-K；否则按 retrieval_mode 宽召回→重排。"""
         enable_rerank = self.settings.use_reranker if use_reranker is None else use_reranker
-        use_hybrid = bool(self.settings.use_bm25)
+        retrieval_mode = resolve_retrieval_mode(self.settings)
+        use_hybrid = retrieval_mode == "hybrid"
         if naive or not enable_rerank:
             t0 = time.perf_counter()
-            # naive stays dense-only for Phase1 ablation; hybrid still available via non-naive
             docs = (
-                self.retrieve_candidates(question, k=self.settings.top_k)
-                if use_hybrid and not naive
-                else self.retrieve_dense_scored(question, k=self.settings.top_k)
+                self.retrieve_dense_scored(question, k=self.settings.top_k)
+                if naive
+                else self.retrieve_candidates(question, k=self.settings.top_k)
             )
             elapsed_ms = (time.perf_counter() - t0) * 1000
-            mode = "hybrid" if (use_hybrid and not naive) else "naive"
+            mode = "naive" if naive else retrieval_mode
             logger.info(
                 "retriever_done",
                 mode=mode,
                 candidate_count=len(docs),
+                retrieval_mode=("dense" if naive else retrieval_mode),
                 use_hybrid=use_hybrid and not naive,
                 elapsed_ms=round(elapsed_ms, 2),
             )
@@ -190,6 +192,7 @@ class QAService:
                 "mode": mode,
                 "use_reranker": False,
                 "use_hybrid": use_hybrid and not naive,
+                "retrieval_mode": "dense" if naive else retrieval_mode,
                 "recall_k": self.settings.top_k,
                 "top_n": self.settings.top_k,
                 "candidate_count": len(docs),
@@ -212,7 +215,16 @@ class QAService:
         rewrite: RewriteResult | None = None,
         original_query: str = "",
     ) -> dict[str, Any]:
-        use_hybrid = bool(meta.get("use_hybrid", self.settings.use_bm25 and retrieved))
+        use_hybrid = bool(
+            meta.get(
+                "use_hybrid",
+                resolve_retrieval_mode(self.settings) == "hybrid" and retrieved,
+            )
+        )
+        retrieval_mode = str(
+            meta.get("retrieval_mode")
+            or resolve_retrieval_mode(self.settings)
+        )
         rewrite_info = rewrite.to_dict() if rewrite else {
             "original_query": original_query,
             "rewritten_query": original_query,
@@ -231,6 +243,7 @@ class QAService:
             top_n=meta.get("top_n") or meta.get("final_count"),
             use_reranker=bool(meta.get("use_reranker")),
             use_hybrid=use_hybrid,
+            retrieval_mode=retrieval_mode,
             original_query=str(rewrite_info.get("original_query") or original_query),
             rewritten_query=str(rewrite_info.get("rewritten_query") or original_query),
             rewrite_method=str(rewrite_info.get("method") or "identity"),
@@ -252,6 +265,7 @@ class QAService:
         payload["rewritten_query"] = trace.get("rewritten_query")
         payload["rewrite_method"] = trace.get("rewrite_method")
         payload["use_hybrid"] = use_hybrid
+        payload["retrieval_mode"] = retrieval_mode
         return payload
 
     def _ask_casual(
@@ -285,6 +299,7 @@ class QAService:
             "route_method": route.method,
             "use_reranker": False,
             "use_hybrid": False,
+            "retrieval_mode": "none",
             "candidate_count": 0,
             "final_count": 0,
             "retrieved": False,
@@ -472,7 +487,8 @@ class QAService:
                 used_rewrite=rewrite.used_rewrite,
                 original_preview=q[:80],
                 rewritten_preview=retrieval_query[:120],
-                use_hybrid=bool(self.settings.use_bm25),
+                use_hybrid=resolve_retrieval_mode(self.settings) == "hybrid",
+                retrieval_mode=resolve_retrieval_mode(self.settings),
             )
 
             self._ensure_index()
@@ -543,6 +559,7 @@ class QAService:
                 "route_method": route.method,
                 "use_reranker": meta.get("use_reranker"),
                 "use_hybrid": meta.get("use_hybrid"),
+                "retrieval_mode": meta.get("retrieval_mode"),
                 "candidate_count": meta.get("candidate_count"),
                 "final_count": meta.get("final_count"),
                 "retrieved": True,

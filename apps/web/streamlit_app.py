@@ -21,9 +21,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.config.settings import get_settings
+from src.retrieval.hybrid import ALLOWED_RETRIEVAL_MODES, resolve_retrieval_mode
 
 settings = get_settings()
 API_BASE = settings.api_base_url.rstrip("/")
+
+_RETRIEVAL_MODE_LABELS = {
+    "dense": "Dense（向量）",
+    "bm25": "BM25（关键词）",
+    "hybrid": "Hybrid（Dense+BM25）",
+}
+_RETRIEVAL_MODE_OPTIONS = ["dense", "bm25", "hybrid"]
 
 _CUSTOM_CSS = """
 <style>
@@ -216,15 +224,25 @@ def _init_state() -> None:
         st.session_state.session_embed_model = settings.embed_model
     if "session_reranker_backend" not in st.session_state:
         st.session_state.session_reranker_backend = settings.reranker_backend
+    if "session_retrieval_mode" not in st.session_state:
+        st.session_state.session_retrieval_mode = resolve_retrieval_mode(settings)
+    if "session_use_memory" not in st.session_state:
+        st.session_state.session_use_memory = bool(settings.use_conversation_memory)
 
 
-def _session_models_payload() -> dict[str, str]:
+def _session_models_payload() -> dict[str, Any]:
     return {
         "llm_model": str(st.session_state.get("session_llm_model") or settings.llm_model).strip(),
         "embed_model": str(st.session_state.get("session_embed_model") or settings.embed_model).strip(),
         "reranker_backend": str(
             st.session_state.get("session_reranker_backend") or settings.reranker_backend
         ).strip(),
+        "retrieval_mode": str(
+            st.session_state.get("session_retrieval_mode") or resolve_retrieval_mode(settings)
+        ).strip().lower(),
+        "use_conversation_memory": bool(
+            st.session_state.get("session_use_memory", settings.use_conversation_memory)
+        ),
     }
 
 
@@ -301,7 +319,14 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
     use_hybrid = trace.get("use_hybrid")
     if use_hybrid is None:
         use_hybrid = trace_payload.get("use_hybrid")
+    retrieval_mode = (
+        trace.get("retrieval_mode")
+        or (trace.get("retrieval") or {}).get("retrieval_mode")
+        or trace_payload.get("retrieval_mode")
+        or ("hybrid" if use_hybrid else "dense")
+    )
     hybrid_label = "开" if use_hybrid else "关"
+    mode_label = _RETRIEVAL_MODE_LABELS.get(str(retrieval_mode), str(retrieval_mode))
     st.markdown(
         f'<div class="wk-panel"><h4>查询分析</h4>'
         f'<div class="wk-kv">问题类型: <code>{qtype}</code><br/>'
@@ -309,6 +334,7 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
         f"原问: <code>{original_q}</code><br/>"
         f"改写问: <code>{rewritten_q}</code><br/>"
         f"改写方法: <code>{rewrite_method}</code><br/>"
+        f"检索模式: <code>{mode_label}</code><br/>"
         f"Hybrid (BM25): <code>{hybrid_label}</code></div></div>",
         unsafe_allow_html=True,
     )
@@ -317,7 +343,11 @@ def _render_trace_panel(trace_payload: dict[str, Any] | None) -> None:
     retrieved_items = trace.get("retrieved_docs") or retrieval.get("items") or []
     top_k = retrieval.get("top_k")
     cand = retrieval.get("candidate_count")
-    retriever_name = retrieval.get("retriever") or ("Hybrid (Dense + BM25 RRF)" if use_hybrid else "Chroma Dense")
+    retriever_name = retrieval.get("retriever") or (
+        "Hybrid (Dense + BM25 RRF)"
+        if use_hybrid
+        else ("BM25 Sparse" if retrieval_mode == "bm25" else "Chroma Dense")
+    )
     st.markdown(
         f'<div class="wk-panel"><h4>检索</h4>'
         f'<div class="wk-kv">检索器: <code>{retriever_name}</code><br/>'
@@ -536,20 +566,48 @@ def _render_sidebar() -> None:
             "llm_model": settings.llm_model,
             "embed_model": settings.embed_model,
             "reranker_backend": settings.reranker_backend,
+            "retrieval_mode": resolve_retrieval_mode(settings),
         }
         llm = st.session_state.session_llm_model
         embed = st.session_state.session_embed_model
         rerank_backend = st.session_state.session_reranker_backend
+        retrieval_mode = str(
+            st.session_state.get("session_retrieval_mode") or resolve_retrieval_mode(settings)
+        ).strip().lower()
+        if retrieval_mode not in ALLOWED_RETRIEVAL_MODES:
+            retrieval_mode = resolve_retrieval_mode(settings)
+            st.session_state.session_retrieval_mode = retrieval_mode
         bound_embed = models.get("bound_embed_model") or embed
         st.markdown(
             f'<div class="wk-panel"><div class="wk-kv">'
             f"<div><b>LLM</b><br/><code>Ollama:{llm}</code></div><br/>"
             f"<div><b>Embedding</b><br/><code>{embed}</code></div><br/>"
             f"<div><b>Reranker</b><br/><code>{rerank_backend}</code></div><br/>"
+            f"<div><b>检索模式</b><br/><code>{_RETRIEVAL_MODE_LABELS.get(retrieval_mode, retrieval_mode)}</code></div><br/>"
             f'<span class="wk-muted">当前向量库 Embedding: <code>{bound_embed}</code> · 仅 session（不写 .env）</span>'
             f"</div></div>",
             unsafe_allow_html=True,
         )
+
+        st.markdown("#### 检索模式")
+        st.caption("Dense=向量近邻 · BM25=关键词 · Hybrid=两路 RRF 融合。切换后下一问生效。")
+        st.radio(
+            "检索模式",
+            options=_RETRIEVAL_MODE_OPTIONS,
+            format_func=lambda m: _RETRIEVAL_MODE_LABELS.get(m, m),
+            key="session_retrieval_mode",
+            horizontal=False,
+            label_visibility="collapsed",
+        )
+
+        st.markdown("#### 多轮 Memory")
+        st.toggle(
+            "开启 Memory",
+            key="session_use_memory",
+            help="关闭后本会话不再写入/注入对话历史；清空聊天仍会开新 conversation_id。",
+        )
+        st.caption("开启后 Prompt 会带近期对话窗口；关闭则每问独立。下一问生效。")
+
         with st.expander("修改模型（当前会话）", expanded=False):
             st.caption(
                 "仅影响当前浏览器会话。"
@@ -579,11 +637,19 @@ def _render_sidebar() -> None:
                     st.session_state.session_reranker_backend = (
                         defaults.get("reranker_backend") or settings.reranker_backend
                     )
+                    st.session_state.session_retrieval_mode = (
+                        defaults.get("retrieval_mode") or resolve_retrieval_mode(settings)
+                    )
+                    st.session_state.session_use_memory = bool(
+                        defaults.get("use_conversation_memory", settings.use_conversation_memory)
+                    )
                     apply_session_models(
                         {
                             "llm_model": st.session_state.session_llm_model,
                             "embed_model": st.session_state.session_embed_model,
                             "reranker_backend": st.session_state.session_reranker_backend,
+                            "retrieval_mode": st.session_state.session_retrieval_mode,
+                            "use_conversation_memory": st.session_state.session_use_memory,
                         }
                     )
                     st.toast("已恢复为本会话的 .env 默认值")
@@ -605,10 +671,14 @@ def _render_sidebar() -> None:
 def _render_chat_history() -> None:
     st.markdown('<p class="wk-col-title">工作台对话</p>', unsafe_allow_html=True)
     cid = st.session_state.get("conversation_id")
-    st.caption(
-        "已开启多轮 Memory · "
-        + (f"会话=`{cid[:8]}…`" if cid else "首条消息将创建新会话")
-    )
+    mem_on = bool(st.session_state.get("session_use_memory", settings.use_conversation_memory))
+    if mem_on:
+        st.caption(
+            "已开启多轮 Memory · "
+            + (f"会话=`{cid[:8]}…`" if cid else "首条消息将创建新会话")
+        )
+    else:
+        st.caption("Memory 已关闭 · 每问独立（不注入历史）")
 
     for msg in st.session_state.messages:
         role = msg.get("role", "user")

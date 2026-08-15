@@ -7,6 +7,28 @@ from src.generation.trace import distance_to_similarity
 from src.indexing.bm25_store import BM25Store
 from src.indexing.vectorstore import VectorStoreManager
 
+ALLOWED_RETRIEVAL_MODES = frozenset({"dense", "bm25", "hybrid"})
+
+
+def normalize_retrieval_mode(
+    value: str | None,
+    *,
+    use_bm25_fallback: bool = False,
+) -> str:
+    mode = (value or "").strip().lower()
+    if mode in ALLOWED_RETRIEVAL_MODES:
+        return mode
+    return "hybrid" if use_bm25_fallback else "dense"
+
+
+def resolve_retrieval_mode(settings: Settings | None = None) -> str:
+    """Prefer RETRIEVAL_MODE; empty/invalid falls back to USE_BM25 → hybrid else dense."""
+    cfg = settings or get_settings()
+    return normalize_retrieval_mode(
+        getattr(cfg, "retrieval_mode", None),
+        use_bm25_fallback=bool(cfg.use_bm25),
+    )
+
 
 def _chunk_key(doc: Document) -> str:
     chunk_id = doc.metadata.get("chunk_id")
@@ -75,6 +97,34 @@ def _dense_with_scores(
     return vector_store.similarity_search(query, k=k, doc_ids=ids)
 
 
+def _bm25_with_scores(
+    query: str,
+    bm25_store: BM25Store,
+    k: int,
+    doc_ids: list[str] | None,
+) -> list[Document]:
+    sparse_docs = bm25_store.search(query, k=k, doc_ids=doc_ids or None)
+    if not sparse_docs:
+        return []
+    raw_scores: list[float] = []
+    for doc in sparse_docs:
+        try:
+            raw_scores.append(float((doc.metadata or {}).get("bm25_score") or 0.0))
+        except (TypeError, ValueError):
+            raw_scores.append(0.0)
+    peak = max(raw_scores) if raw_scores else 0.0
+    out: list[Document] = []
+    for doc, raw in zip(sparse_docs, raw_scores):
+        meta = dict(doc.metadata or {})
+        if peak > 0:
+            meta["retrieval_score"] = round(min(1.0, raw / peak), 6)
+        else:
+            meta["retrieval_score"] = 0.0
+        meta["retrieval_backend"] = "bm25"
+        out.append(Document(page_content=doc.page_content, metadata=meta))
+    return out
+
+
 def hybrid_retrieve(
     query: str,
     vector_store: VectorStoreManager,
@@ -82,19 +132,30 @@ def hybrid_retrieve(
     doc_ids: list[str] | None = None,
     settings: Settings | None = None,
     use_bm25: bool | None = None,
+    retrieval_mode: str | None = None,
     recall_top_n: int | None = None,
 ) -> list[Document]:
     """
-    Dense (+ optional BM25) recall with RRF fusion.
+    Recall by mode: dense | bm25 | hybrid (Dense+BM25 RRF).
 
-    When use_bm25 is False, returns dense-only scored candidates (no BM25).
+    Legacy: if retrieval_mode is omitted, use_bm25 True → hybrid else dense
+    (or settings.retrieval_mode / USE_BM25 via resolve_retrieval_mode).
     """
     cfg = settings or get_settings()
     n = recall_top_n if recall_top_n is not None else cfg.recall_top_n
-    enable_bm25 = cfg.use_bm25 if use_bm25 is None else use_bm25
+
+    if retrieval_mode is not None:
+        mode = normalize_retrieval_mode(retrieval_mode, use_bm25_fallback=False)
+    elif use_bm25 is not None:
+        mode = "hybrid" if use_bm25 else "dense"
+    else:
+        mode = resolve_retrieval_mode(cfg)
+
+    if mode == "bm25":
+        return _bm25_with_scores(query, bm25_store, n, doc_ids)
 
     dense_docs = _dense_with_scores(query, vector_store, n, doc_ids)
-    if not enable_bm25:
+    if mode == "dense":
         return dense_docs
 
     sparse_docs = bm25_store.search(query, k=n, doc_ids=doc_ids or None)

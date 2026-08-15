@@ -75,6 +75,8 @@ class ChatRequest(BaseModel):
     llm_model: str | None = Field(default=None)
     embed_model: str | None = Field(default=None)
     reranker_backend: str | None = Field(default=None)
+    retrieval_mode: str | None = Field(default=None)
+    use_conversation_memory: bool | None = Field(default=None)
     session_models: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
@@ -90,11 +92,16 @@ class ChatRequest(BaseModel):
 
     def model_overrides(self) -> SessionModelOverrides:
         nested = self.session_models if isinstance(self.session_models, dict) else {}
+        mem = self.use_conversation_memory
+        if mem is None:
+            mem = nested.get("use_conversation_memory")
         return SessionModelOverrides.from_mapping(
             {
                 "llm_model": self.llm_model or nested.get("llm_model"),
                 "embed_model": self.embed_model or nested.get("embed_model"),
                 "reranker_backend": self.reranker_backend or nested.get("reranker_backend"),
+                "retrieval_mode": self.retrieval_mode or nested.get("retrieval_mode"),
+                "use_conversation_memory": mem,
             }
         )
 
@@ -105,6 +112,8 @@ class SessionModelsRequest(BaseModel):
     llm_model: str | None = None
     embed_model: str | None = None
     reranker_backend: str | None = None
+    retrieval_mode: str | None = None
+    use_conversation_memory: bool | None = None
 
 
 class CompareRequest(BaseModel):
@@ -192,6 +201,7 @@ def _parse_trace(raw: Any) -> AnswerTrace | None:
         rewrite_method=str(raw.get("rewrite_method") or ""),
         used_rewrite=bool(raw.get("used_rewrite")),
         use_hybrid=bool(raw.get("use_hybrid")),
+        retrieval_mode=str(raw.get("retrieval_mode") or ""),
         retrieval=raw.get("retrieval") or {},
         reranking=raw.get("reranking") or {},
         generation=raw.get("generation") or {},
@@ -311,6 +321,11 @@ def _to_product_response(answer: ChatAnswer | dict[str, Any]) -> ProductChatResp
             answer.get("use_hybrid")
             if answer.get("use_hybrid") is not None
             else (trace.use_hybrid if trace else False)
+        ),
+        retrieval_mode=str(
+            answer.get("retrieval_mode")
+            or (trace.retrieval_mode if trace else "")
+            or ""
         ),
         session_models=answer.get("session_models")
         if isinstance(answer.get("session_models"), dict)
@@ -456,6 +471,7 @@ def health():
             "use_query_router": settings.use_query_router,
             "use_reranker": settings.use_reranker,
             "use_bm25": settings.use_bm25,
+            "retrieval_mode": defaults_from_settings(settings).get("retrieval_mode"),
             "use_query_rewrite": settings.use_query_rewrite,
             "use_conversation_memory": settings.use_conversation_memory,
         },

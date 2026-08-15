@@ -273,6 +273,7 @@ def build_answer_trace(
     top_n: int | None = None,
     use_reranker: bool = False,
     use_hybrid: bool = False,
+    retrieval_mode: str = "",
     original_query: str = "",
     rewritten_query: str = "",
     rewrite_method: str = "",
@@ -339,12 +340,20 @@ def build_answer_trace(
     else:
         reranker_label = "Skipped"
 
-    if use_hybrid and retrieved:
+    if retrieval_mode == "hybrid" and retrieved:
+        retriever_label = "Hybrid (Dense + BM25 RRF)"
+    elif retrieval_mode == "bm25" and retrieved:
+        retriever_label = "BM25 Sparse"
+    elif (use_hybrid or retrieval_mode == "hybrid") and retrieved:
         retriever_label = "Hybrid (Dense + BM25 RRF)"
     elif retrieved:
         retriever_label = "Chroma Dense Similarity"
     else:
         retriever_label = "Skipped"
+
+    mode_label = (retrieval_mode or ("hybrid" if use_hybrid else "dense")).strip().lower()
+    if retrieved and mode_label not in {"dense", "bm25", "hybrid"}:
+        mode_label = "hybrid" if use_hybrid else "dense"
 
     return {
         "route": query_type,
@@ -355,10 +364,12 @@ def build_answer_trace(
         "rewritten_query": rewritten_query or original_query,
         "rewrite_method": rewrite_method,
         "used_rewrite": used_rewrite,
-        "use_hybrid": bool(use_hybrid and retrieved),
+        "use_hybrid": bool((use_hybrid or mode_label == "hybrid") and retrieved),
+        "retrieval_mode": mode_label if retrieved else "",
         "retrieval": {
             "retriever": retriever_label,
-            "use_hybrid": bool(use_hybrid and retrieved),
+            "retrieval_mode": mode_label if retrieved else "",
+            "use_hybrid": bool((use_hybrid or mode_label == "hybrid") and retrieved),
             "top_k": recall_k,
             "candidate_count": len(candidates),
             "documents": unique_filenames(candidates),
@@ -366,7 +377,7 @@ def build_answer_trace(
             "original_query": original_query,
             "rewritten_query": rewritten_query or original_query,
             "rewrite_method": rewrite_method,
-            "note": "Chunks may truncate mid-sentence (character splitter); overlap mitigates context loss.",
+            "note": "切块可能在句中截断（按字符分割）；块间 overlap 可减轻上下文丢失。",
         },
         "reranking": {
             "reranker": reranker_label,

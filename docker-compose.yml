@@ -22,6 +22,7 @@ services:
       BM25_STORE_PATH: /app/chroma_db/bm25_store.json
       DOC_REGISTRY_PATH: /app/chroma_db/doc_registry.json
       USE_BM25: ${USE_BM25:-false}
+      RETRIEVAL_MODE: ${RETRIEVAL_MODE:-}
       USE_RERANKER: ${USE_RERANKER:-true}
       USE_QUERY_ROUTER: ${USE_QUERY_ROUTER:-true}
       QUERY_ROUTER_MODE: ${QUERY_ROUTER_MODE:-rules_llm}

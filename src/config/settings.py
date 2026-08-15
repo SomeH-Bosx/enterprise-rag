@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     recall_top_n: int = Field(default=20, alias="RECALL_TOP_N")
     # Phase2 enables reranker by default. BM25 Hybrid: implement but default OFF (Step3.5).
     use_bm25: bool = Field(default=False, alias="USE_BM25")
+    # dense | bm25 | hybrid — empty means derive from USE_BM25 (true→hybrid, else dense).
+    retrieval_mode: str = Field(default="", alias="RETRIEVAL_MODE")
     use_reranker: bool = Field(default=True, alias="USE_RERANKER")
     use_pdr: bool = Field(default=False, alias="USE_PDR")
     # Phase3 Query Router: classify intent before retrieval.

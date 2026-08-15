@@ -28,6 +28,14 @@ def test_overrides_apply_without_touching_env_defaults():
     assert base.reranker_backend == "dashscope"
 
 
+def test_overrides_apply_retrieval_mode():
+    base = Settings(USE_BM25=False, RETRIEVAL_MODE="")
+    ov = SessionModelOverrides(retrieval_mode="hybrid")
+    eff = ov.apply(base)
+    assert eff.retrieval_mode == "hybrid"
+    assert base.retrieval_mode == ""
+
+
 def test_strip_ollama_prefix_and_reject_bad_backend():
     ov = SessionModelOverrides.from_mapping(
         {
@@ -43,9 +51,23 @@ def test_defaults_from_settings_no_secrets():
     s = Settings(DASHSCOPE_API_KEY="sk-secret-should-not-leak")
     d = defaults_from_settings(s)
     assert "dashscope_api_key" not in d
-    assert set(d) == {"llm_model", "embed_model", "reranker_backend"}
+    assert set(d) == {
+        "llm_model",
+        "embed_model",
+        "reranker_backend",
+        "retrieval_mode",
+        "use_conversation_memory",
+    }
     blob = str(d)
     assert "sk-secret" not in blob
+
+
+def test_overrides_apply_memory_flag():
+    base = Settings(USE_CONVERSATION_MEMORY=True)
+    ov = SessionModelOverrides(use_conversation_memory=False)
+    eff = ov.apply(base)
+    assert eff.use_conversation_memory is False
+    assert base.use_conversation_memory is True
 
 
 def test_qa_ask_uses_session_llm(tmp_path: Path):

@@ -11,8 +11,45 @@ from src.config.settings import Settings
 from src.indexing.bm25_store import BM25Store
 from src.memory.store import Message
 from src.query_rewrite.rewriter import QueryRewriter
-from src.retrieval.hybrid import hybrid_retrieve, rrf_fuse
+from src.retrieval.hybrid import hybrid_retrieve, resolve_retrieval_mode, rrf_fuse
 from src.services.qa_service import QAService
+
+
+def test_resolve_retrieval_mode_from_use_bm25(tmp_path: Path):
+    assert resolve_retrieval_mode(_settings(tmp_path, USE_BM25=False, RETRIEVAL_MODE="")) == "dense"
+    assert resolve_retrieval_mode(_settings(tmp_path, USE_BM25=True, RETRIEVAL_MODE="")) == "hybrid"
+    assert resolve_retrieval_mode(_settings(tmp_path, USE_BM25=True, RETRIEVAL_MODE="bm25")) == "bm25"
+    assert resolve_retrieval_mode(_settings(tmp_path, USE_BM25=False, RETRIEVAL_MODE="hybrid")) == "hybrid"
+
+
+def test_bm25_only_retrieve(tmp_path: Path):
+    settings = _settings(tmp_path, RETRIEVAL_MODE="bm25", USE_BM25=False)
+    bm25 = BM25Store(settings)
+    docs = [
+        Document(page_content="ACME annual leave is 15 days", metadata={"chunk_id": "c1", "doc_id": "d1"}),
+        Document(page_content="unrelated kitchen recipes", metadata={"chunk_id": "c2", "doc_id": "d2"}),
+    ]
+    bm25.upsert_documents(docs)
+
+    class FakeVS:
+        def similarity_search_with_score(self, query, k=5, doc_ids=None):
+            raise AssertionError("dense must not be called in bm25 mode")
+
+        def similarity_search(self, query, k=5, doc_ids=None):
+            raise AssertionError("dense must not be called in bm25 mode")
+
+    out = hybrid_retrieve(
+        "annual leave",
+        FakeVS(),  # type: ignore[arg-type]
+        bm25,
+        settings=settings,
+        retrieval_mode="bm25",
+        recall_top_n=5,
+    )
+    assert out
+    assert out[0].metadata.get("chunk_id") == "c1"
+    assert out[0].metadata.get("retrieval_score") is not None
+    assert out[0].metadata.get("retrieval_backend") == "bm25"
 
 
 def _settings(tmp_path: Path, **kwargs) -> Settings:

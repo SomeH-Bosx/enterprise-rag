@@ -67,6 +67,7 @@ class AnswerTrace(BaseModel):
     rewrite_method: str = ""
     used_rewrite: bool = False
     use_hybrid: bool = False
+    retrieval_mode: str = ""
     retrieval: dict[str, Any] = Field(default_factory=dict)
     reranking: dict[str, Any] = Field(default_factory=dict)
     generation: dict[str, Any] = Field(default_factory=dict)
@@ -110,5 +111,6 @@ class ProductChatResponse(BaseModel):
     rewritten_query: str = ""
     rewrite_method: str = ""
     use_hybrid: bool = False
+    retrieval_mode: str = ""
     # Step4 session model overrides (echo; never includes secrets)
     session_models: dict[str, Any] = Field(default_factory=dict)
