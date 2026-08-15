@@ -4,7 +4,7 @@
 
 **决策**：默认 LLM / Embedding 使用 Ollama（如 `qwen2.5:7b`、`nomic-embed-text`）。
 
-**原因**：企业演示与合规叙事需要「数据尽量不出本机」。云厂商可通过后续网关扩展（Phase6 Future Work），但本项目默认走本地路径。
+**原因**：企业演示与合规叙事需要「数据尽量不出本机」。云厂商可通过后续网关扩展（Phase6，见 README Future Work），但本项目默认走本地路径。
 
 ## ADR-2：Hybrid 检索（Dense + BM25 + RRF）
 

@@ -1,6 +1,6 @@
-# Enterprise RAG — 架构图（与当前实现对齐）
+# Enterprise RAG — 架构图
 
-> **状态：** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · **Phase6（云 LLM/Embed + Session API Key）= Future Work**  
+> **状态：** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · 其余见 README [Future Work](README.md#11-future-work)  
 > **默认在线链路：**  
 > `User → FastAPI / Streamlit → Query Router → (Rewrite? → Dense|BM25|Hybrid → Rerank → Prompt(原问+Memory?) → LLM) | (LLM 直答)`  
 > **文档：** [`docs/eval.md`](docs/eval.md) · [`docs/docker.md`](docs/docker.md) · [`docs/demo_script.md`](docs/demo_script.md) · [`docs/development_plan.md`](docs/development_plan.md)
@@ -9,7 +9,7 @@
 
 ## 0. 一句话架构
 
-**本地 Ollama 负责 Embedding 与生成；Chroma 做 Dense 近邻；可选 BM25 / Hybrid(RRF)；DashScope 做语义重排；Query Router 分流知识库与闲聊；Streamlit 提供可观测 Trace、Session 检索模式 / Memory / 模型覆盖。**
+**本地 Ollama 负责 Embedding 与生成；Chroma 做 Dense 近邻；可选 BM25 / Hybrid(RRF)；DashScope 做语义重排；Query Router 分流知识库与闲聊；Streamlit 提供可观测 Trace、Session 检索模式 / Memory / Rewrite / 模型覆盖。**
 
 ---
 
@@ -119,7 +119,7 @@ Query Router（规则优先，歧义 LLM）
         → Ollama（跳过检索；可带 Memory）
 ```
 
-**Session UI（不写 `.env`）：** 检索模式、开启 Memory、LLM/Embedding/Reranker backend。
+**Session UI（不写 `.env`）：** 检索模式、Memory / Rewrite 开关、LLM/Embedding/Reranker backend；上传区独立于折叠的知识库列表；健康检查与文档列表短缓存。
 
 ---
 
@@ -213,7 +213,7 @@ sequenceDiagram
 | Query Rewrite | `src/query_rewrite/` | Step3.5 |
 | Memory | `src/memory/` | Step3；UI 可关 |
 | Trace / Confidence | `src/generation/trace.py` | Step1 |
-| Session 覆盖 | `src/config/session_models.py` | Step4 + 检索模式/Memory |
+| Session 覆盖 | `src/config/session_models.py` | Step4 + 检索模式 / Memory / Rewrite |
 | QA / Ingest | `src/services/` | 编排 |
 | Eval | `src/eval/` | Phase5 ragas_lite + Recall |
 | API / Streamlit / CLI | `apps/` | Phase4+ |
@@ -222,13 +222,13 @@ sequenceDiagram
 
 ---
 
-## 7. 目录结构（当前）
+## 7. 目录结构
 
 ```text
 enterprise-rag/
 ├── apps/
 │   ├── api/main.py                 # FastAPI
-│   ├── web/streamlit_app.py        # 主 UI（检索模式 / Memory / Trace）
+│   ├── web/streamlit_app.py        # 主 UI（检索模式 / Memory / Rewrite / Trace）
 │   ├── web/app.py                  # Gradio 薄客户端
 │   └── cli/main.py                 # ingest-dir / eval / compare
 ├── src/
@@ -251,7 +251,7 @@ enterprise-rag/
 | --- | --- | --- |
 | `USE_QUERY_ROUTER` | `true` | 意图路由 |
 | `QUERY_ROUTER_MODE` | `rules_llm` | 规则 + LLM |
-| `USE_QUERY_REWRITE` | `true` | 检索问改写 |
+| `USE_QUERY_REWRITE` | `true` | 检索问改写（UI 可关） |
 | `RETRIEVAL_MODE` | 空 | `dense`\|`bm25`\|`hybrid`；空则由 `USE_BM25` 推导 |
 | `USE_BM25` | `false` | 兼容：true → 视为 hybrid |
 | `USE_RERANKER` | `true` | 重排 |
@@ -275,9 +275,18 @@ enterprise-rag/
 | Phase3 | 完成 | Query Router 双链 |
 | Phase4 | 完成 | FastAPI + Streamlit + Docker |
 | Enhancement 1–4 | 完成 | Trace / 多格式 / Memory / Rewrite / Hybrid / OCR / Session 模型 |
-| UI 检索模式 | 完成 | Dense / BM25 / Hybrid + Memory 开关 |
+| UI 检索 / 会话开关 | 完成 | Dense / BM25 / Hybrid + Memory / Rewrite |
 | Phase5 | 完成 | Recall@K + RAGAS-style；样例 Recall@5 ≈ 91.7% |
-| Phase6 | Future Work | 云 LLM/Embed + Session API Key |
+| Phase6 及其他 | Future Work | 见 [README §11](README.md#11-future-work) |
 
 **有意不做：** Agent / Web Search / SQL / 知识图谱。  
 **对外不宣称：** PDR、文档域 router（代码可留、主路径未用）。
+
+### Future Work
+
+1. Phase6：云 LLM / Embed + Session API Key  
+2. 减少不同语言语料的回答差异  
+3. 优化 Query 改写策略，并在产品/UI 上与 Memory 进一步独立  
+4. 尝试并对比不同 chunk 切分策略  
+5. 优化置信度计算与展示  
+6. **高级**：Agent / Multi-Agent / Web Search / SQL Agent / 知识图谱。

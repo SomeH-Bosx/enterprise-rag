@@ -3,7 +3,7 @@
 > 一句话：用本地 LLM + 向量检索，把企业内部文档变成可引用的智能问答服务。  
 > One-liner: Turn private enterprise documents into citable Q&A with local LLM + vector retrieval.
 
-**状态 / Status:** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · Phase6（云模型）= Future Work  
+**状态 / Status:** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · [Future Work](#11-future-work) 含 Phase6 等 
 **架构图 / Architecture:** [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · **评测 / Eval:** [`docs/eval.md`](docs/eval.md) · **Docker:** [`docs/docker.md`](docs/docker.md) · **演示:** [`docs/demo_script.md`](docs/demo_script.md)
 
 ---
@@ -22,6 +22,7 @@
 | 8 | [API](#8-api) | [API](#8-api) |
 | 9 | [配置](#9-配置管理) | [Config](#9-config-en) |
 | 10 | [相关文档](#10-相关文档) | [Docs](#10-docs-en) |
+| 11 | [Future Work](#11-future-work) | [Future Work](#11-future-work-en) |
 
 ---
 
@@ -32,7 +33,8 @@
 企业知识分散在手册、规格书与 Office 文档中，通用聊天模型容易编造答案。  
 **Enterprise RAG** 提供私有化路径：多格式上传 → 向量入库 → 意图路由 →（可选改写 / Hybrid）检索重排 → 本地 LLM 生成，并返回**引用来源**与 Answer Trace，便于演示、审计与秋招作品集展示。
 
-当前样例评测（Recall@5，视本机索引而定）约 **91.7%**；详见 [`evaluation/phase5_report.md`](evaluation/phase5_report.md)。云端生成/Embedding + Session API Key（Phase6）列为 **Future Work**。
+当前样例评测（Recall@5，视本机索引而定）约 **91.7%**；详见 [`evaluation/phase5_report.md`](evaluation/phase5_report.md)。  
+后续方向见下文 [Future Work](#11-future-work)。
 
 ## 2. 系统架构图
 
@@ -98,13 +100,14 @@ Query Router（规则 + LLM）
 
 ## 4. 功能展示
 
-1. **多格式上传**：pdf / doc(x) / ppt(x) / md / txt；legacy Office 可显式转换  
-2. **智能问答**：Query Router 分流知识库 / 闲聊；可选 Query Rewrite  
+1. **多格式上传**：pdf / doc(x) / ppt(x) / md / txt；侧栏上传区独立于知识库列表（列表默认折叠）  
+2. **智能问答**：Query Router 分流知识库 / 闲聊；可选 Query Rewrite（Session 可关）  
 3. **检索模式（Session）**：Dense / BM25 / Hybrid，侧栏切换，不写 `.env`  
 4. **引用来源 + Trace**：sources、置信度、原问/改写问、检索模式  
 5. **Conversation Memory**：多轮窗口；侧栏可开关；Clear chat 开新会话  
 6. **Session 模型覆盖**：LLM / Embedding / Reranker backend 仅当前浏览器会话  
-7. **评测**：`python -m apps.cli.main eval`（见 [`docs/eval.md`](docs/eval.md)）
+7. **侧栏体验**：健康检查 / 文档列表短缓存 + 手动刷新；`.streamlit/config.toml` 关闭文件热重载以减轻重载噪音  
+8. **评测**：`python -m apps.cli.main eval`（见 [`docs/eval.md`](docs/eval.md)）
 
 ### Demo 截图
 
@@ -194,7 +197,7 @@ enterprise-rag/
 
 - **Query Router**：知识库走检索链，闲聊直达 LLM  
 - **检索三模式**：Dense / BM25 / Hybrid(RRF)，Session UI 可切换  
-- **Rewrite + Memory**：换问法更稳；Memory 可开关  
+- **Rewrite + Memory**：换问法更稳；二者均可 Session 开关（关 Rewrite 后检索用原问 / 记忆拼接回退）  
 - **Reranker**：宽召回 → 语义重排 Top-K（DashScope，可回退）  
 - **Trace / Session 模型**：可解释、会话级覆盖不落盘密钥  
 - **评测闭环**：固定题集 + Recall@K + RAGAS-style 报告  
@@ -227,7 +230,16 @@ enterprise-rag/
 - [`docs/docker.md`](docs/docker.md) — Docker / Ollama  
 - [`docs/demo_script.md`](docs/demo_script.md) — 演示脚本  
 - [`docs/architecture_decisions.md`](docs/architecture_decisions.md) — 架构决策（ADR）  
-- [`docs/development_plan.md`](docs/development_plan.md) — 开发计划（含 Phase6 Future Work）  
+- [`docs/development_plan.md`](docs/development_plan.md) — 开发计划（含 Future Work）  
+
+## 11. Future Work
+
+1. **Phase6**：云端 LLM / Embedding + Session API Key（Clear chat 保留 Key；不写回 `.env`）  
+2. **减少不同语言语料的回答差异**（中英 / 多语料一致性）  
+3. **优化 Query 改写策略**，并将改写从 Memory 板块在产品叙事与 UI 上进一步独立  
+4. **尝试使用并对比不同的 chunk 切分策略**  
+5. **优化置信度的计算与展示**，使其更合理、更好解释  
+6. **高级**：Agent / Multi-Agent / Web Search / SQL Agent / 知识图谱。
 
 ---
 
@@ -238,7 +250,7 @@ enterprise-rag/
 Enterprise documents should not be answered by hallucinating chatbots.  
 **Enterprise RAG** is a local-first service: multi-format ingest → route by intent → optional rewrite / hybrid retrieve + rerank → generate with Ollama → return **citable sources** and an Answer Trace.
 
-**Status:** Phases 1–4 + Enhancement Steps 1–4 done · Phase5 Evaluation done · **Phase6 (cloud LLM/Embed + session API key) = Future Work**.  
+**Status:** Phases 1–4 + Enhancement Steps 1–4 done · Phase5 Evaluation done · remaining items under [Future Work](#11-future-work-en).  
 Sample **Recall@5 ≈ 91.7%** (depends on your local index); see [`docs/eval.md`](docs/eval.md).
 
 ## 2. Architecture (EN)
@@ -250,7 +262,7 @@ User → Query Router
 ```
 
 Ingest: multi-format → convert → load → tables/OCR → chunk → embed → Chroma (+ BM25 store).  
-Session UI can switch retrieval mode and toggle Memory (no `.env` write). Full Mermaid: [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md).
+Session UI can switch retrieval mode and toggle Memory / Rewrite (no `.env` write). Full Mermaid: [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md).
 
 ## 3. Tech Stack (EN)
 
@@ -281,9 +293,9 @@ Defaults from `.env.example`. Docker often uses `host.docker.internal:11434` for
 
 ## 4. Features (EN)
 
-- Multi-format upload (pdf/doc/ppt/md/txt) with optional Office convert, table Markdown, OCR  
-- Query Router, Memory toggle, Query Rewrite, Dense/BM25/Hybrid retrieval, Reranker  
-- Streamlit workspace: Trace, session model overrides + retrieval mode (no `.env` write)  
+- Multi-format upload (pdf/doc/ppt/md/txt); upload controls sit outside the collapsible document list  
+- Query Router; Memory + Rewrite session toggles; Dense/BM25/Hybrid retrieval; Reranker  
+- Streamlit workspace: Trace, session model overrides + retrieval mode (no `.env` write); short health/docs cache  
 - Evaluation: Recall@K + RAGAS-style metrics via CLI  
 
 ### Demo screenshots
@@ -320,11 +332,11 @@ Host Ollama is recommended; see [`docs/docker.md`](docs/docker.md).
 
 ## 7. Highlights (EN)
 
-Observable RAG · Dense/BM25/Hybrid session switch · Memory toggle · Trace · session model overrides · reproducible Phase5 eval · local-first Ollama
+Observable RAG · Dense/BM25/Hybrid session switch · Memory + Rewrite toggles · Trace · session model overrides · reproducible Phase5 eval · local-first Ollama
 
 ## 8. API
 
-Same table as Chinese section. Chat: `{"query":"..."}` → `{"answer","sources",...}`. Optional `conversation_id`, `retrieval_mode`, `use_conversation_memory`, and session model fields.
+Same table as Chinese section. Chat: `{"query":"..."}` → `{"answer","sources",...}`. Optional `conversation_id`, `retrieval_mode`, `use_conversation_memory`, `use_query_rewrite`, and session model fields.
 
 ## 9. Config (EN)
 
@@ -333,3 +345,11 @@ All secrets/paths/models via `.env` — no hardcoding; UI session overrides are 
 ## 10. Docs (EN)
 
 [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · [`docs/eval.md`](docs/eval.md) · [`docs/docker.md`](docs/docker.md) · [`docs/demo_script.md`](docs/demo_script.md) · [`docs/architecture_decisions.md`](docs/architecture_decisions.md) · [`docs/development_plan.md`](docs/development_plan.md)
+
+## 11. Future Work (EN)
+
+1. **Phase6:** cloud LLM / Embedding + session API key (kept across Clear chat; never written to `.env`)  
+2. **Reduce answer drift across languages / corpora**  
+3. **Improve Query Rewrite strategy** and keep it product/UI-independent from Memory  
+4. **Try and compare alternative chunking strategies**  
+5. **Improve confidence scoring and presentation** so it is more calibrated and explainable  

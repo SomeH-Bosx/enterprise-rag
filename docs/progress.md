@@ -1000,7 +1000,7 @@ Current Query (+ Memory)
 
 ---
 
-### Phase5：Evaluation
+# Phase5：Evaluation
 
 状态：完成
 
@@ -1022,7 +1022,7 @@ Current Query (+ Memory)
 
 下一阶段：
 
-**Phase6 = Future Work**（云 LLM/Embed + Session Key，秋招冲刺不强制）
+**Phase6 = Future Work**（云 LLM/Embed + Session Key）
 
 ---
 
@@ -1047,7 +1047,7 @@ Current Query (+ Memory)
 
 ---
 
-### Demo 截图（秋招展示）
+### Demo 截图
 
 状态：完成
 
@@ -1065,7 +1065,7 @@ Current Query (+ Memory)
 
 ---
 
-### 冗余清理（秋招公开面）
+### 冗余清理
 
 状态：完成
 
@@ -1081,3 +1081,22 @@ Current Query (+ Memory)
 下一阶段：
 
 **等待指令**
+
+---
+
+### Session Rewrite 开关 + 侧栏体验
+
+状态：完成
+
+
+实现：
+
+- Session `use_query_rewrite`：API / `session_models` / Streamlit 接线；关闭后检索不走 LLM 改写（`disabled` / `memory_fallback`）
+- `/chat` 请求显式传递布尔覆盖（含 `False`）
+- 侧栏：上传区独立于折叠「知识库列表」；health/docs 短缓存 + 刷新按钮
+- `.streamlit/config.toml`：`fileWatcherType=none`，降低热重载对 site-packages 的探测噪音
+
+
+下一阶段：
+
+**Future Work**（见 README §11 / `docs/development_plan.md`）：Phase6；多语言回答一致性；改写策略优化并与 Memory 叙事独立；chunk 策略对比；置信度计算与展示优化
