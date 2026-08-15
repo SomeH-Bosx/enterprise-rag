@@ -57,6 +57,7 @@ def test_defaults_from_settings_no_secrets():
         "reranker_backend",
         "retrieval_mode",
         "use_conversation_memory",
+        "use_query_rewrite",
     }
     blob = str(d)
     assert "sk-secret" not in blob
@@ -68,6 +69,14 @@ def test_overrides_apply_memory_flag():
     eff = ov.apply(base)
     assert eff.use_conversation_memory is False
     assert base.use_conversation_memory is True
+
+
+def test_overrides_apply_rewrite_flag():
+    base = Settings(USE_QUERY_REWRITE=True)
+    ov = SessionModelOverrides(use_query_rewrite=False)
+    eff = ov.apply(base)
+    assert eff.use_query_rewrite is False
+    assert base.use_query_rewrite is True
 
 
 def test_qa_ask_uses_session_llm(tmp_path: Path):

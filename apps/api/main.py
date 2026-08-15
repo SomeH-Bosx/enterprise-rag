@@ -77,6 +77,7 @@ class ChatRequest(BaseModel):
     reranker_backend: str | None = Field(default=None)
     retrieval_mode: str | None = Field(default=None)
     use_conversation_memory: bool | None = Field(default=None)
+    use_query_rewrite: bool | None = Field(default=None)
     session_models: dict[str, Any] | None = Field(default=None)
 
     @model_validator(mode="after")
@@ -95,6 +96,9 @@ class ChatRequest(BaseModel):
         mem = self.use_conversation_memory
         if mem is None:
             mem = nested.get("use_conversation_memory")
+        rewrite = self.use_query_rewrite
+        if rewrite is None:
+            rewrite = nested.get("use_query_rewrite")
         return SessionModelOverrides.from_mapping(
             {
                 "llm_model": self.llm_model or nested.get("llm_model"),
@@ -102,6 +106,7 @@ class ChatRequest(BaseModel):
                 "reranker_backend": self.reranker_backend or nested.get("reranker_backend"),
                 "retrieval_mode": self.retrieval_mode or nested.get("retrieval_mode"),
                 "use_conversation_memory": mem,
+                "use_query_rewrite": rewrite,
             }
         )
 
@@ -114,6 +119,7 @@ class SessionModelsRequest(BaseModel):
     reranker_backend: str | None = None
     retrieval_mode: str | None = None
     use_conversation_memory: bool | None = None
+    use_query_rewrite: bool | None = None
 
 
 class CompareRequest(BaseModel):
@@ -474,6 +480,7 @@ def health():
             "retrieval_mode": defaults_from_settings(settings).get("retrieval_mode"),
             "use_query_rewrite": settings.use_query_rewrite,
             "use_conversation_memory": settings.use_conversation_memory,
+            "use_query_rewrite": settings.use_query_rewrite,
         },
     }
 

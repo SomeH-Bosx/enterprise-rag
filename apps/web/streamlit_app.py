@@ -87,22 +87,63 @@ _CUSTOM_CSS = """
 """
 
 
-def _client() -> httpx.Client:
-    return httpx.Client(base_url=API_BASE, timeout=300.0, trust_env=False)
+_HEALTH_CACHE_KEY = "_cache_health"
+_DOCS_CACHE_KEY = "_cache_docs"
+_STATUS_TTL_S = 30.0
 
 
-def fetch_health() -> dict:
-    with _client() as client:
+def _client(*, timeout: float = 300.0) -> httpx.Client:
+    return httpx.Client(base_url=API_BASE, timeout=timeout, trust_env=False)
+
+
+def _cache_get(key: str, ttl_s: float) -> Any | None:
+    entry = st.session_state.get(key)
+    if not isinstance(entry, dict) or "data" not in entry:
+        return None
+    try:
+        age = time.time() - float(entry.get("ts") or 0)
+    except (TypeError, ValueError):
+        return None
+    if age > ttl_s:
+        return None
+    return entry["data"]
+
+
+def _cache_set(key: str, data: Any) -> None:
+    st.session_state[key] = {"ts": time.time(), "data": data}
+
+
+def invalidate_status_caches() -> None:
+    """Drop health/docs caches after ingest/delete or manual refresh."""
+    st.session_state.pop(_HEALTH_CACHE_KEY, None)
+    st.session_state.pop(_DOCS_CACHE_KEY, None)
+    st.session_state.pop("_health", None)
+
+
+def fetch_health(*, force: bool = False) -> dict:
+    if not force:
+        cached = _cache_get(_HEALTH_CACHE_KEY, _STATUS_TTL_S)
+        if isinstance(cached, dict):
+            return cached
+    with _client(timeout=15.0) as client:
         resp = client.get("/health")
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+    _cache_set(_HEALTH_CACHE_KEY, data)
+    return data
 
 
-def fetch_documents() -> list[dict]:
-    with _client() as client:
+def fetch_documents(*, force: bool = False) -> list[dict]:
+    if not force:
+        cached = _cache_get(_DOCS_CACHE_KEY, _STATUS_TTL_S)
+        if isinstance(cached, list):
+            return cached
+    with _client(timeout=15.0) as client:
         resp = client.get("/documents")
         resp.raise_for_status()
-        return resp.json().get("documents") or []
+        docs = resp.json().get("documents") or []
+    _cache_set(_DOCS_CACHE_KEY, docs)
+    return docs
 
 
 def upload_file(
@@ -161,9 +202,14 @@ def ask(
         payload["conversation_id"] = conversation_id
     if session_models:
         payload["session_models"] = session_models
-        for key in ("llm_model", "embed_model", "reranker_backend"):
-            if session_models.get(key):
-                payload[key] = session_models[key]
+        for key in ("llm_model", "embed_model", "reranker_backend", "retrieval_mode"):
+            val = session_models.get(key)
+            if val:
+                payload[key] = val
+        # Booleans must use `is not None` — `if False` would drop the override.
+        for key in ("use_conversation_memory", "use_query_rewrite"):
+            if key in session_models and session_models[key] is not None:
+                payload[key] = bool(session_models[key])
     with _client() as client:
         resp = client.post("/chat", json=payload)
     if resp.status_code >= 400:
@@ -228,6 +274,8 @@ def _init_state() -> None:
         st.session_state.session_retrieval_mode = resolve_retrieval_mode(settings)
     if "session_use_memory" not in st.session_state:
         st.session_state.session_use_memory = bool(settings.use_conversation_memory)
+    if "session_use_rewrite" not in st.session_state:
+        st.session_state.session_use_rewrite = bool(settings.use_query_rewrite)
 
 
 def _session_models_payload() -> dict[str, Any]:
@@ -242,6 +290,9 @@ def _session_models_payload() -> dict[str, Any]:
         ).strip().lower(),
         "use_conversation_memory": bool(
             st.session_state.get("session_use_memory", settings.use_conversation_memory)
+        ),
+        "use_query_rewrite": bool(
+            st.session_state.get("session_use_rewrite", settings.use_query_rewrite)
         ),
     }
 
@@ -433,24 +484,30 @@ def _render_sidebar() -> None:
         )
 
         st.caption(f"API · `{API_BASE}`")
+        refresh_cols = st.columns([3, 1])
+        with refresh_cols[1]:
+            force_status = st.button("刷新", use_container_width=True, help="强制重新拉取 /health 与文档列表")
+        if force_status:
+            invalidate_status_caches()
         try:
-            health = fetch_health()
+            health = fetch_health(force=force_status)
             st.session_state["_health"] = health
             st.success(f"在线 · 文档={health.get('documents')} · 片段={health.get('chunks')}")
         except Exception as exc:  # noqa: BLE001
             st.session_state["_health"] = None
+            invalidate_status_caches()
             st.error(f"API 不可达: {exc}")
             st.info("请先启动 API：`uvicorn apps.api.main:app --host 127.0.0.1 --port 8000`")
 
         st.divider()
-        st.markdown("#### 知识库")
-
+        st.markdown("#### 上传文档")
         uploaded_files = st.file_uploader(
             "上传文档",
             type=["pdf", "doc", "docx", "ppt", "pptx", "md", "txt"],
             accept_multiple_files=True,
             help="支持：pdf/doc/docx/ppt/pptx/md/txt",
             key="kb_uploader",
+            label_visibility="collapsed",
         )
         elapsed_slot = st.empty()
         if uploaded_files and st.button("开始入库", type="primary", use_container_width=True):
@@ -483,6 +540,7 @@ def _render_sidebar() -> None:
                 "fail_rows": fail_rows,
             }
             if ok_n:
+                invalidate_status_caches()
                 st.rerun()
             for msg in fail_rows:
                 st.error(msg)
@@ -516,47 +574,52 @@ def _render_sidebar() -> None:
                 st.session_state.pop("last_ingest_report", None)
                 st.rerun()
 
-        try:
-            docs = fetch_documents()
-        except Exception as exc:  # noqa: BLE001
-            docs = []
-            st.warning(f"无法列出文档: {exc}")
+        _health_kb = st.session_state.get("_health") or {}
+        _doc_n = _health_kb.get("documents")
+        _kb_title = f"知识库列表（文档 {_doc_n}）" if _doc_n is not None else "知识库列表"
+        with st.expander(_kb_title, expanded=False):
+            try:
+                docs = fetch_documents(force=force_status)
+            except Exception as exc:  # noqa: BLE001
+                docs = []
+                st.warning(f"无法列出文档: {exc}")
 
-        if not docs:
-            st.info("暂无文档。请先上传文件。")
-        else:
-            for d in docs:
-                fname = d.get("filename") or "unknown"
-                ftype = (d.get("file_type") or Path(fname).suffix.lstrip(".") or "pdf").upper()
-                status = d.get("status") or "indexed"
-                uploaded_at = _fmt_time(d.get("uploaded_at") or d.get("updated_at"))
-                doc_id = d.get("doc_id") or ""
-                st.markdown(
-                    f'<div class="wk-doc-card">'
-                    f"<strong>{fname}</strong><br/>"
-                    f'<span class="wk-muted">{ftype} · {status} · {uploaded_at}</span>'
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-                with st.expander(f"详情 · {fname[:28]}", expanded=False):
-                    st.json(
-                        {
-                            "filename": d.get("filename"),
-                            "file_type": d.get("file_type"),
-                            "status": d.get("status"),
-                            "uploaded_at": d.get("uploaded_at") or d.get("updated_at"),
-                            "doc_id": d.get("doc_id"),
-                            "chunk_count": d.get("chunk_count"),
-                            "source": d.get("source"),
-                        }
+            if not docs:
+                st.info("暂无文档。请先上传文件。")
+            else:
+                for d in docs:
+                    fname = d.get("filename") or "unknown"
+                    ftype = (d.get("file_type") or Path(fname).suffix.lstrip(".") or "pdf").upper()
+                    status = d.get("status") or "indexed"
+                    uploaded_at = _fmt_time(d.get("uploaded_at") or d.get("updated_at"))
+                    doc_id = d.get("doc_id") or ""
+                    st.markdown(
+                        f'<div class="wk-doc-card">'
+                        f"<strong>{fname}</strong><br/>"
+                        f'<span class="wk-muted">{ftype} · {status} · {uploaded_at}</span>'
+                        f"</div>",
+                        unsafe_allow_html=True,
                     )
-                if st.button("删除", key=f"del_{doc_id}", use_container_width=True):
-                    out = delete_document(doc_id)
-                    if out.get("ok"):
-                        st.toast(f"已删除 {fname}")
-                        st.rerun()
-                    else:
-                        st.error(out.get("message") or "删除失败")
+                    with st.expander(f"详情 · {fname[:28]}", expanded=False):
+                        st.json(
+                            {
+                                "filename": d.get("filename"),
+                                "file_type": d.get("file_type"),
+                                "status": d.get("status"),
+                                "uploaded_at": d.get("uploaded_at") or d.get("updated_at"),
+                                "doc_id": d.get("doc_id"),
+                                "chunk_count": d.get("chunk_count"),
+                                "source": d.get("source"),
+                            }
+                        )
+                    if st.button("删除", key=f"del_{doc_id}", use_container_width=True):
+                        out = delete_document(doc_id)
+                        if out.get("ok"):
+                            st.toast(f"已删除 {fname}")
+                            invalidate_status_caches()
+                            st.rerun()
+                        else:
+                            st.error(out.get("message") or "删除失败")
 
         st.divider()
         st.markdown("#### 模型设置")
@@ -608,6 +671,19 @@ def _render_sidebar() -> None:
         )
         st.caption("开启后 Prompt 会带近期对话窗口；关闭则每问独立。下一问生效。")
 
+        st.markdown("#### Query Rewrite")
+        st.toggle(
+            "开启 Rewrite",
+            key="session_use_rewrite",
+            help="仅影响知识库检索用查询；回答仍用用户原问。",
+        )
+        st.caption(
+            "**作用板块：检索（召回）**，不是最终回答生成。"
+            "开启后：在 Dense/BM25/Hybrid 之前，把当前问（可结合历史）改写成更完整的检索问，"
+            "用于提高追问/指代场景的召回；**回答 Prompt 仍使用原问**。"
+            "关闭后：检索用原问（或仅记忆拼接回退）。闲聊路径不走 Rewrite。下一问生效。"
+        )
+
         with st.expander("修改模型（当前会话）", expanded=False):
             st.caption(
                 "仅影响当前浏览器会话。"
@@ -643,6 +719,9 @@ def _render_sidebar() -> None:
                     st.session_state.session_use_memory = bool(
                         defaults.get("use_conversation_memory", settings.use_conversation_memory)
                     )
+                    st.session_state.session_use_rewrite = bool(
+                        defaults.get("use_query_rewrite", settings.use_query_rewrite)
+                    )
                     apply_session_models(
                         {
                             "llm_model": st.session_state.session_llm_model,
@@ -650,6 +729,7 @@ def _render_sidebar() -> None:
                             "reranker_backend": st.session_state.session_reranker_backend,
                             "retrieval_mode": st.session_state.session_retrieval_mode,
                             "use_conversation_memory": st.session_state.session_use_memory,
+                            "use_query_rewrite": st.session_state.session_use_rewrite,
                         }
                     )
                     st.toast("已恢复为本会话的 .env 默认值")

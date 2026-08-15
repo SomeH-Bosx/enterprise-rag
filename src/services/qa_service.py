@@ -389,6 +389,9 @@ class QAService:
                 llm_model=effective.llm_model,
                 embed_model=effective.embed_model,
                 reranker_backend=effective.reranker_backend,
+                retrieval_mode=getattr(effective, "retrieval_mode", None),
+                use_conversation_memory=bool(effective.use_conversation_memory),
+                use_query_rewrite=bool(effective.use_query_rewrite),
             )
         try:
             result = self._ask_impl(

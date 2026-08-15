@@ -1,0 +1,21 @@
+# Streamlit runtime config for this repo (option D: narrower file watching).
+# Restart `streamlit run ...` after changing this file.
+
+[server]
+# Disable filesystem hot-reload. Avoids probing site-packages/transformers on
+# every script run (torchvision noise + slower reruns). Refresh the browser
+# after editing UI code, or temporarily set this back to "auto".
+fileWatcherType = "none"
+
+# Extra safety if watcher is re-enabled later.
+folderWatchBlacklist = [
+  ".venv",
+  "venv",
+  "__pycache__",
+  ".pytest_cache",
+  "chroma_db",
+  "upload_cache",
+  "evaluation",
+  "docs",
+  ".git",
+]
