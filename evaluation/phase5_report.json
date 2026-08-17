@@ -1,517 +1,1251 @@
 {
   "metrics": {
-    "total": 12,
-    "recall_at_k": 0.9166666666666666,
-    "hit_at_k": 0.9166666666666666,
-    "hits": 11,
-    "citation_page_hit_rate": 0.3333333333333333,
-    "page_eval_count": 3,
+    "total": 30,
+    "recall_at_k": 0.8666666666666667,
+    "hit_at_k": 0.8666666666666667,
+    "hits": 26,
+    "citation_page_hit_rate": 0.7586206896551724,
+    "page_eval_count": 29,
     "top_k": 5,
     "recall_top_n": 20,
     "use_reranker": true,
     "use_bm25": true,
-    "skip_generation": false,
+    "skip_generation": true,
     "ragas": {
-      "faithfulness": 0.6446,
-      "answer_relevancy": 0.6078,
-      "context_precision": 0.9167,
-      "must_include_pass_rate": 0.75,
-      "n": 12,
+      "skipped": true,
       "backend": "ragas_lite"
     },
-    "elapsed_ms": 509578.86
+    "elapsed_ms": 27796.39
   },
   "rows": [
     {
-      "id": "acme-annual-leave",
-      "question": "How many annual leave days do ACME full-time employees get?",
+      "id": "hb-scholarship-kinds",
+      "question": "广东技术师范大学本科生奖学金管理办法中，奖学金设置了哪些种类？",
       "expected_doc_id": null,
-      "expected_filename": "acme_employee_handbook.pdf",
-      "expected_page_hint": 0,
-      "ground_truth": "ACME full-time employees get 15 days of annual leave.",
-      "hit_doc": true,
-      "hit_page": false,
-      "retrieved_doc_ids": [
-        "acme_employee_handbook_b204440075c2ac5e",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库_ed29fbe1884a37ee",
-        "迪士尼对员工培训共19页_a5d08356880dda03",
-        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
-      ],
-      "retrieved_files": [
-        "acme_employee_handbook.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库、技术支持等.pdf",
-        "迪士尼对员工培训共19页.ppt",
-        "offer先生春招求职一本通PDF.pdf"
-      ],
-      "retrieved_pages": [
-        1,
-        1,
-        2,
-        3,
-        111
-      ],
-      "retrieve_ms": 3709.56,
-      "generate_ms": 81516.27,
-      "final_answer": "ACME full-time employees receive 15 days annual leave.",
-      "mode": "hybrid_rerank",
-      "ragas": {
-        "faithfulness": 1.0,
-        "answer_relevancy": 0.8889,
-        "context_precision": 1.0,
-        "must_include_pass": true
-      }
-    },
-    {
-      "id": "acme-remote",
-      "question": "According to acme_employee_handbook, how many remote work days are allowed per week?",
-      "expected_doc_id": null,
-      "expected_filename": "acme_employee_handbook.pdf",
-      "expected_page_hint": 0,
-      "ground_truth": "Remote work is allowed up to 2 days per week.",
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 112,
+      "ground_truth": "国家奖学金、国家励志奖学金、单位(个人)专项奖学金、“自强标兵”奖学金、优秀学生奖学金和学校专项奖学金。",
       "hit_doc": true,
       "hit_page": true,
       "retrieved_doc_ids": [
-        "acme_employee_handbook_b204440075c2ac5e",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园内部知识与工具操作手册_c2cdbcf278ef229e",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库_ed29fbe1884a37ee",
-        "迪士尼乐园内部知识与工具操作手册_c2cdbcf278ef229e"
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e"
       ],
       "retrieved_files": [
-        "acme_employee_handbook.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园内部知识与工具操作手册.docx",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库、技术支持等.pdf",
-        "迪士尼乐园内部知识与工具操作手册.docx"
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf"
       ],
       "retrieved_pages": [
-        1,
-        1,
-        0,
-        2,
-        0
+        112,
+        113,
+        5,
+        114,
+        116
       ],
-      "retrieve_ms": 584.4,
-      "generate_ms": 24188.57,
-      "final_answer": "According to the ACME Employee Handbook, employees may work remotely up to 3 days per week.",
+      "retrieve_ms": 7738.89,
+      "generate_ms": 0.0,
+      "final_answer": "",
       "mode": "hybrid_rerank",
       "ragas": {
-        "faithfulness": 0.9286,
-        "answer_relevancy": 0.5,
+        "faithfulness": null,
+        "answer_relevancy": null,
         "context_precision": 1.0,
-        "must_include_pass": false
+        "must_include_pass": null
       }
     },
     {
-      "id": "acme-expense",
-      "question": "What is the expense claim deadline in the ACME handbook?",
+      "id": "hb-excellent-three-good-amount",
+      "question": "优秀三好学生奖学金的评选比例和奖金额分别是多少？",
       "expected_doc_id": null,
-      "expected_filename": "acme_employee_handbook.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "Expense claims must be submitted within 30 days.",
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 113,
+      "ground_truth": "按各学院参评学生人数1%的比例评选，奖金额为3000元/人。",
       "hit_doc": true,
-      "hit_page": null,
+      "hit_page": true,
       "retrieved_doc_ids": [
-        "acme_employee_handbook_b204440075c2ac5e",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库_ed29fbe1884a37ee",
-        "迪士尼对员工培训共19页_a5d08356880dda03",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库_ed29fbe1884a37ee"
-      ],
-      "retrieved_files": [
-        "acme_employee_handbook.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库、技术支持等.pdf",
-        "迪士尼对员工培训共19页.ppt",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库、技术支持等.pdf"
-      ],
-      "retrieved_pages": [
-        1,
-        1,
-        1,
-        3,
-        2
-      ],
-      "retrieve_ms": 563.38,
-      "generate_ms": 44385.58,
-      "final_answer": "The expense claim deadline in the ACME handbook is within 30 days.",
-      "mode": "hybrid_rerank",
-      "ragas": {
-        "faithfulness": 0.6364,
-        "answer_relevancy": 1.0,
-        "context_precision": 1.0,
-        "must_include_pass": true
-      }
-    },
-    {
-      "id": "beta-product-name",
-      "question": "What is the product name in beta_product_spec?",
-      "expected_doc_id": null,
-      "expected_filename": "beta_product_spec.pdf",
-      "expected_page_hint": 0,
-      "ground_truth": "Nebula Search Appliance",
-      "hit_doc": true,
-      "hit_page": false,
-      "retrieved_doc_ids": [
-        "beta_product_spec_49680c9cbf799a3d",
-        "enterprise_knowledge_mix_dbe74488888d5545",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
         "offer先生春招求职一本通PDF_4ac566e05e6d6788",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e"
       ],
       "retrieved_files": [
-        "beta_product_spec.pdf",
-        "enterprise_knowledge_mix.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
         "offer先生春招求职一本通PDF.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "offer先生春招求职一本通PDF.pdf"
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf"
       ],
       "retrieved_pages": [
-        1,
-        1,
-        67,
-        1,
-        5
+        113,
+        115,
+        112,
+        158,
+        116
       ],
-      "retrieve_ms": 482.97,
-      "generate_ms": 41628.76,
-      "final_answer": "The product name in beta_product_spec is Nebula Search Appliance.",
+      "retrieve_ms": 693.89,
+      "generate_ms": 0.0,
+      "final_answer": "",
       "mode": "hybrid_rerank",
       "ragas": {
-        "faithfulness": 0.6667,
-        "answer_relevancy": 1.0,
+        "faithfulness": null,
+        "answer_relevancy": null,
         "context_precision": 1.0,
-        "must_include_pass": true
+        "must_include_pass": null
       }
     },
     {
-      "id": "beta-p95",
-      "question": "What is the p95 latency SLO for Nebula Search Appliance?",
+      "id": "hb-three-good-amount",
+      "question": "三好学生奖学金按什么比例评选？奖金多少？",
       "expected_doc_id": null,
-      "expected_filename": "beta_product_spec.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "p95 query latency under 200 milliseconds",
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 113,
+      "ground_truth": "按各学院参评学生人数6%的比例评选，奖金额为2000元/人。",
       "hit_doc": true,
-      "hit_page": null,
+      "hit_page": true,
       "retrieved_doc_ids": [
-        "beta_product_spec_49680c9cbf799a3d",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库_ed29fbe1884a37ee"
-      ],
-      "retrieved_files": [
-        "beta_product_spec.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库、技术支持等.pdf"
-      ],
-      "retrieved_pages": [
-        1,
-        1,
-        1,
-        1,
-        1
-      ],
-      "retrieve_ms": 490.78,
-      "generate_ms": 40574.51,
-      "final_answer": "The p95 latency SLO for Nebula Search Appliance is under 200 milliseconds.",
-      "mode": "hybrid_rerank",
-      "ragas": {
-        "faithfulness": 0.9167,
-        "answer_relevancy": 1.0,
-        "context_precision": 1.0,
-        "must_include_pass": true
-      }
-    },
-    {
-      "id": "beta-connectors",
-      "question": "Which connectors does the Beta product support?",
-      "expected_doc_id": null,
-      "expected_filename": "beta_product_spec.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "PDF, Markdown, Confluence",
-      "hit_doc": true,
-      "hit_page": null,
-      "retrieved_doc_ids": [
-        "beta_product_spec_49680c9cbf799a3d",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园内部通讯录与职责说明_7561b741f02193e0",
-        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
-      ],
-      "retrieved_files": [
-        "beta_product_spec.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园内部通讯录与职责说明.docx",
-        "offer先生春招求职一本通PDF.pdf"
-      ],
-      "retrieved_pages": [
-        1,
-        1,
-        1,
-        0,
-        44
-      ],
-      "retrieve_ms": 519.82,
-      "generate_ms": 40204.98,
-      "final_answer": "The Beta product, specifically the Nebula Search Appliance, supports PDF, Markdown, and Confluence connectors.",
-      "mode": "hybrid_rerank",
-      "ragas": {
-        "faithfulness": 0.7692,
-        "answer_relevancy": 0.5385,
-        "context_precision": 1.0,
-        "must_include_pass": true
-      }
-    },
-    {
-      "id": "acme-paid-leave",
-      "question": "Does the ACME handbook mention paid leave policy?",
-      "expected_doc_id": null,
-      "expected_filename": "acme_employee_handbook.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "Yes, the handbook describes paid leave / annual leave policy.",
-      "hit_doc": true,
-      "hit_page": null,
-      "retrieved_doc_ids": [
-        "acme_employee_handbook_b204440075c2ac5e",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库_ed29fbe1884a37ee",
-        "迪士尼乐园内部知识与工具操作手册_c2cdbcf278ef229e",
-        "迪士尼乐园内部知识与工具操作手册_c2cdbcf278ef229e"
-      ],
-      "retrieved_files": [
-        "acme_employee_handbook.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库、技术支持等.pdf",
-        "迪士尼乐园内部知识与工具操作手册.docx",
-        "迪士尼乐园内部知识与工具操作手册.docx"
-      ],
-      "retrieved_pages": [
-        1,
-        1,
-        1,
-        0,
-        0
-      ],
-      "retrieve_ms": 558.35,
-      "generate_ms": 35286.69,
-      "final_answer": "Yes, the ACME Employee Handbook mentions a paid leave policy: full-time employees receive 15 days annual leave.",
-      "mode": "hybrid_rerank",
-      "ragas": {
-        "faithfulness": 0.875,
-        "answer_relevancy": 0.5,
-        "context_precision": 1.0,
-        "must_include_pass": true
-      }
-    },
-    {
-      "id": "beta-confluence",
-      "question": "In beta_product_spec, is Confluence a supported connector?",
-      "expected_doc_id": null,
-      "expected_filename": "beta_product_spec.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "Yes, Confluence is a supported connector.",
-      "hit_doc": true,
-      "hit_page": null,
-      "retrieved_doc_ids": [
-        "beta_product_spec_49680c9cbf799a3d",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
         "offer先生春招求职一本通PDF_4ac566e05e6d6788",
         "offer先生春招求职一本通PDF_4ac566e05e6d6788"
       ],
       "retrieved_files": [
-        "beta_product_spec.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
         "offer先生春招求职一本通PDF.pdf",
         "offer先生春招求职一本通PDF.pdf"
       ],
       "retrieved_pages": [
-        1,
-        1,
-        1,
-        2,
-        2
+        113,
+        115,
+        112,
+        158,
+        171
       ],
-      "retrieve_ms": 507.59,
-      "generate_ms": 18858.03,
-      "final_answer": "Yes, according to the information provided in the document \"Beta Product Specification\", Confluence is a supported connector for the Nebula Search Appliance.",
+      "retrieve_ms": 871.55,
+      "generate_ms": 0.0,
+      "final_answer": "",
       "mode": "hybrid_rerank",
       "ragas": {
-        "faithfulness": 0.5263,
-        "answer_relevancy": 0.3158,
+        "faithfulness": null,
+        "answer_relevancy": null,
         "context_precision": 1.0,
-        "must_include_pass": true
+        "must_include_pass": null
       }
     },
     {
-      "id": "acme-remote-rule",
-      "question": "What remote work rule is described for ACME employees?",
+      "id": "hb-cadre-scholarship",
+      "question": "优秀学生干部奖学金的奖金额是多少？校级学生组织如何计算评选比例？",
       "expected_doc_id": null,
-      "expected_filename": "acme_employee_handbook.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "Up to 2 remote work days per week.",
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 113,
+      "ground_truth": "奖金额为800元/人；校学生会等校级组织分别按其学生干部人数15%的比例评选。",
       "hit_doc": true,
-      "hit_page": null,
+      "hit_page": true,
       "retrieved_doc_ids": [
-        "acme_employee_handbook_b204440075c2ac5e",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园内部知识与工具操作手册_c2cdbcf278ef229e",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库_ed29fbe1884a37ee"
-      ],
-      "retrieved_files": [
-        "acme_employee_handbook.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园内部知识与工具操作手册.docx",
-        "迪士尼乐园流媒体介绍包括不同方案的价格、功能差异（像画质、同时观看设备）、内容库、技术支持等.pdf"
-      ],
-      "retrieved_pages": [
-        1,
-        1,
-        1,
-        0,
-        2
-      ],
-      "retrieve_ms": 430.51,
-      "generate_ms": 47225.21,
-      "final_answer": "ACME员工可以每周远程工作最多3天。",
-      "mode": "hybrid_rerank",
-      "ragas": {
-        "faithfulness": 0.0,
-        "answer_relevancy": 0.0,
-        "context_precision": 1.0,
-        "must_include_pass": false
-      }
-    },
-    {
-      "id": "beta-latency-target",
-      "question": "What latency target is defined in the Beta product specification?",
-      "expected_doc_id": null,
-      "expected_filename": "beta_product_spec.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "p95 under 200 milliseconds",
-      "hit_doc": true,
-      "hit_page": null,
-      "retrieved_doc_ids": [
-        "beta_product_spec_49680c9cbf799a3d",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "迪士尼乐园内部通讯录与职责说明_7561b741f02193e0",
-        "enterprise_knowledge_mix_dbe74488888d5545"
-      ],
-      "retrieved_files": [
-        "beta_product_spec.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "迪士尼乐园内部通讯录与职责说明.docx",
-        "enterprise_knowledge_mix.pdf"
-      ],
-      "retrieved_pages": [
-        1,
-        1,
-        1,
-        0,
-        1
-      ],
-      "retrieve_ms": 1045.58,
-      "generate_ms": 40557.07,
-      "final_answer": "The p95 query latency under 200 milliseconds is defined as the latency target for the Beta Product Specification.",
-      "mode": "hybrid_rerank",
-      "ragas": {
-        "faithfulness": 0.6667,
-        "answer_relevancy": 0.8,
-        "context_precision": 1.0,
-        "must_include_pass": true
-      }
-    },
-    {
-      "id": "acme-leave-zh",
-      "question": "公司的年假政策是什么？全职员工有多少天年假？",
-      "expected_doc_id": null,
-      "expected_filename": "acme_employee_handbook.pdf",
-      "expected_page_hint": null,
-      "ground_truth": "全职员工年假 15 天",
-      "hit_doc": false,
-      "hit_page": null,
-      "retrieved_doc_ids": [
-        "迪士尼对员工培训共19页_a5d08356880dda03",
-        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
-        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
-        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
         "offer先生春招求职一本通PDF_4ac566e05e6d6788"
       ],
       "retrieved_files": [
-        "迪士尼对员工培训共19页.ppt",
-        "offer先生春招求职一本通PDF.pdf",
-        "offer先生春招求职一本通PDF.pdf",
-        "offer先生春招求职一本通PDF.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
         "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        113,
+        115,
+        116,
+        112,
+        158
+      ],
+      "retrieve_ms": 657.67,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hb-single-item-scholarship",
+      "question": "综合测评单项奖学金的评选比例和金额是多少？",
+      "expected_doc_id": null,
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 113,
+      "ground_truth": "按参评班级学生人数15%的比例评选，奖金额为500元/人。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        113,
+        115,
+        112,
+        116,
+        158
+      ],
+      "retrieve_ms": 629.42,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hb-academic-special-awards",
+      "question": "优秀学术成果专项奖学金的特等奖和三等奖金额分别是多少？",
+      "expected_doc_id": null,
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 113,
+      "ground_truth": "特等奖2000元/人，三等奖200元/人。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        113,
+        116,
+        112,
+        115,
+        158
+      ],
+      "retrieve_ms": 748.72,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hb-absent-disqualify",
+      "question": "一学期内无故旷课达到多少节就不能享受优秀学生奖学金？",
+      "expected_doc_id": null,
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 115,
+      "ground_truth": "一学期内无故旷课5节以上（含5节）者不能享受优秀学生奖学金和工作积极分子奖。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        115,
+        113,
+        112,
+        116,
+        158
+      ],
+      "retrieve_ms": 843.28,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hb-semantic-top-scholarship",
+      "question": "广师大评给表现最顶尖那一档“三好”荣誉的奖金大概是多少钱一个人？",
+      "expected_doc_id": null,
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 113,
+      "ground_truth": "优秀三好学生奖学金为3000元/人。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        114,
+        113,
+        112,
+        116,
+        158
+      ],
+      "retrieve_ms": 632.29,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hb-toc-has-discipline-rule",
+      "question": "学生手册目录中，是否包含《广东技术师范大学学生违纪处分管理规定》？",
+      "expected_doc_id": null,
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 4,
+      "ground_truth": "包含。目录下篇第十三项为《广东技术师范大学学生违纪处分管理规定》。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e"
+      ],
+      "retrieved_files": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf"
       ],
       "retrieved_pages": [
         4,
-        157,
-        169,
-        165,
-        175
+        5,
+        115,
+        116,
+        112
       ],
-      "retrieve_ms": 708.93,
-      "generate_ms": 69915.61,
-      "final_answer": "文档中未找到相关内容。",
+      "retrieve_ms": 586.62,
+      "generate_ms": 0.0,
+      "final_answer": "",
       "mode": "hybrid_rerank",
       "ragas": {
-        "faithfulness": 0.0,
-        "answer_relevancy": 0.0,
-        "context_precision": 0.0,
-        "must_include_pass": false
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
       }
     },
     {
-      "id": "beta-slo-zh",
-      "question": "Nebula Search Appliance 的 p95 延迟 SLO 是多少？",
+      "id": "offer-what-is-spring",
+      "question": "根据offer先生春招求职一本通，什么是春招？",
       "expected_doc_id": null,
-      "expected_filename": "beta_product_spec.pdf",
+      "expected_filename": "offer先生春招求职一本通PDF.pdf",
+      "expected_page_hint": 9,
+      "ground_truth": "春招即春季招聘：企业在秋招、补招后重新放出未招满或少量新开辟岗位，因在春季前后招聘而得名。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        9,
+        9,
+        1,
+        10,
+        108
+      ],
+      "retrieve_ms": 705.31,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "offer-spring-timeline",
+      "question": "春招一般什么时候开始？高峰大概在哪几个月？",
+      "expected_doc_id": null,
+      "expected_filename": "offer先生春招求职一本通PDF.pdf",
+      "expected_page_hint": 9,
+      "ground_truth": "春节前就会开始，一般12月就有岗位；过年前有一波小高潮，过年后3-4月有大高潮。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        9,
+        1,
+        10,
+        20,
+        147
+      ],
+      "retrieve_ms": 662.48,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "offer-spring-vs-autumn",
+      "question": "春招和秋招、秋招补录相比，岗位量和招聘时间有什么特点？",
+      "expected_doc_id": null,
+      "expected_filename": "offer先生春招求职一本通PDF.pdf",
+      "expected_page_hint": 9,
+      "ground_truth": "春招岗位种类少、总量少、招聘时间短；秋招规模最大岗位多时间长；补录岗位变少时间变短。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        9,
+        9,
+        10,
+        28,
+        31
+      ],
+      "retrieve_ms": 583.69,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "offer-who-can-apply",
+      "question": "今年春招哪些人可以参与？",
+      "expected_doc_id": null,
+      "expected_filename": "offer先生春招求职一本通PDF.pdf",
+      "expected_page_hint": 10,
+      "ground_truth": "23届应届（22年下半年~23届上半年毕业）以及21-22届择业期同学均可参与；也有少量实习供24-25届申请。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        10,
+        9,
+        1,
+        20,
+        19
+      ],
+      "retrieve_ms": 760.25,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "offer-spring-difficulty",
+      "question": "材料中认为春招的难点主要有哪些？",
+      "expected_doc_id": null,
+      "expected_filename": "offer先生春招求职一本通PDF.pdf",
+      "expected_page_hint": 9,
+      "ground_truth": "竞争压力更大、招聘时间更短、岗位量更少且选择面更窄。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        9,
+        1,
+        10,
+        92,
+        32
+      ],
+      "retrieve_ms": 479.88,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "offer-semantic-when-recruit",
+      "question": "春季校园招聘是不是一定要等到春天才能投？材料怎么说？",
+      "expected_doc_id": null,
+      "expected_filename": "offer先生春招求职一本通PDF.pdf",
+      "expected_page_hint": 9,
+      "ground_truth": "春招一定不是春季才招聘；基本上春节前就会开始，12月就会有岗位放出。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        9,
+        10,
+        53,
+        147,
+        36
+      ],
+      "retrieve_ms": 791.3,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "offer-keyword-star",
+      "question": "简历写作部分提到的STAR法则是用来做什么的？",
+      "expected_doc_id": null,
+      "expected_filename": "offer先生春招求职一本通PDF.pdf",
       "expected_page_hint": null,
-      "ground_truth": "p95 低于 200 milliseconds",
+      "ground_truth": "用STAR法则精简简历（目录与正文均有STAR法则相关章节）。",
       "hit_doc": true,
       "hit_page": null,
       "retrieved_doc_ids": [
-        "beta_product_spec_49680c9cbf799a3d",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545",
-        "enterprise_knowledge_mix_dbe74488888d5545"
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
       ],
       "retrieved_files": [
-        "beta_product_spec.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf",
-        "enterprise_knowledge_mix.pdf"
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
       ],
       "retrieved_pages": [
-        1,
-        1,
-        1,
-        1,
-        1
+        55,
+        2,
+        56,
+        2,
+        59
       ],
-      "retrieve_ms": 493.19,
-      "generate_ms": 15135.32,
-      "final_answer": "Nebula Search Appliance 的 p95 查询延迟 SLO 为 200 毫秒。",
+      "retrieve_ms": 696.14,
+      "generate_ms": 0.0,
+      "final_answer": "",
       "mode": "hybrid_rerank",
       "ragas": {
-        "faithfulness": 0.75,
-        "answer_relevancy": 0.75,
+        "faithfulness": null,
+        "answer_relevancy": null,
         "context_precision": 1.0,
-        "must_include_pass": true
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "esc-seven-triggers",
+      "question": "迪士尼客诉升级机制中，一线必须立即启动升级的通用触发门槛包括哪几类？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "人身/财产安全事故；涉及执法或舆情风险；歧视或严重服务冒犯；高额赔偿诉求；连续二次投诉；政策与合同争议；系统级故障。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx"
+      ],
+      "retrieved_pages": [
+        0,
+        0,
+        0,
+        10,
+        0
+      ],
+      "retrieve_ms": 787.25,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "esc-time-limits",
+      "question": "出现升级情形时，一线要在多长时间内通知当班主管，并在多长时间内交由宾客关系部或专业部门接手？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "3分钟内通知当班主管，10分钟内交由宾客关系部（GR）或对应专业部门接手。",
+      "hit_doc": false,
+      "hit_page": false,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        52,
+        34,
+        40,
+        182,
+        53
+      ],
+      "retrieve_ms": 585.83,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 0.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "esc-code-g",
+      "question": "升级流程时间轴里，一线员工0–3分钟要用对讲机呼叫什么代码？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "呼叫“Code G”（Guest Escalation），同时填写《现场事件单》。",
+      "hit_doc": false,
+      "hit_page": false,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        28,
+        17,
+        23,
+        62,
+        30
+      ],
+      "retrieve_ms": 588.23,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 0.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "esc-shanghai-threshold",
+      "question": "上海迪士尼高额赔偿诉求的升级门槛金额是多少？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "上海：索赔金额＞当班主管当日授权上限，文档写明 >1000元。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx"
+      ],
+      "retrieved_pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "retrieve_ms": 710.9,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "esc-memory-card",
+      "question": "客诉升级的一句话记忆卡片是什么？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "“只要出现‘血、法、媒、钱、群、二、政’七个字，立刻升级！”",
+      "hit_doc": false,
+      "hit_page": false,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        31,
+        1,
+        26,
+        23,
+        164
+      ],
+      "retrieve_ms": 664.81,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 0.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "esc-semantic-media-threat",
+      "question": "如果游客说要把事情发到网上或找媒体曝光，一线要不要升级？依据是什么？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "要升级。属于“涉及执法或舆情风险”（声称联系媒体或社交平台曝光等）。",
+      "hit_doc": false,
+      "hit_page": false,
+      "retrieved_doc_ids": [
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        165,
+        57,
+        164,
+        177,
+        64
+      ],
+      "retrieve_ms": 666.54,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 0.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hotel-checkin-checkout",
+      "question": "材料中迪士尼乐园酒店的入住和退房时间分别是什么？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "入住时间为15:00过后，退房时间为11:00之前。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx"
+      ],
+      "retrieved_pages": [
+        0,
+        0,
+        0,
+        10,
+        0
+      ],
+      "retrieve_ms": 663.92,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hotel-hk-price",
+      "question": "中国香港迪士尼乐园酒店每晚价格低至多少？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "每晚价格低至¥934。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx"
+      ],
+      "retrieved_pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "retrieve_ms": 675.81,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "hotel-extra-magic-hour",
+      "question": "迪士尼乐园酒店宾客专属福利中的“超时神奇体验（Extra Magic Hour）”是什么意思？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "每天可在指定主题乐园对大众开放前一小时提前游玩特定游乐项目。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx"
+      ],
+      "retrieved_pages": [
+        0,
+        0,
+        0,
+        0,
+        10
+      ],
+      "retrieve_ms": 577.59,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "tdl-open-date",
+      "question": "东京迪士尼乐园向公众开放的日期是哪一天？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+      "expected_page_hint": 5,
+      "ground_truth": "1983年4月15日向公众开放。",
+      "hit_doc": true,
+      "hit_page": false,
+      "retrieved_doc_ids": [
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx"
+      ],
+      "retrieved_pages": [
+        10,
+        0,
+        31,
+        16,
+        0
+      ],
+      "retrieve_ms": 959.55,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "tdl-oriental-land-contract",
+      "question": "东京迪士尼由谁运营？与迪士尼公司的分成比例是怎样的？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+      "expected_page_hint": 9,
+      "ground_truth": "由Oriental Land（东方乐园）在华特迪士尼公司许可下拥有和经营；45年合约中迪士尼获得入场费10%、餐饮商品销售5%，另加授权费；迪士尼不占股、不出资建设。",
+      "hit_doc": true,
+      "hit_page": false,
+      "retrieved_doc_ids": [
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx"
+      ],
+      "retrieved_pages": [
+        31,
+        10,
+        16,
+        0,
+        0
+      ],
+      "retrieve_ms": 631.22,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "tdl-attendance-record",
+      "question": "材料提到1983年8月13日东京迪士尼单日入园大约多少人？四年后刷新纪录时又是多少？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+      "expected_page_hint": 6,
+      "ground_truth": "1983年8月13日约93000人；四年后纪录为111500人。",
+      "hit_doc": true,
+      "hit_page": false,
+      "retrieved_doc_ids": [
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a",
+        "迪士尼乐园——东京迪士尼解析-中英文版_e0d08fdba1ab9f9a"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx",
+        "迪士尼乐园——东京迪士尼解析-中英文版.pptx"
+      ],
+      "retrieved_pages": [
+        5,
+        10,
+        31,
+        8,
+        16
+      ],
+      "retrieve_ms": 770.49,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "xdoc-disney-gr-and-hotel-time",
+      "question": "宾客关系部（Guest Relations）在客诉升级中扮演什么角色？另，迪士尼乐园酒店退房一般在几点前？",
+      "expected_doc_id": null,
+      "expected_filename": "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+      "expected_page_hint": 0,
+      "ground_truth": "GR为升级接手部门之一；酒店材料写明退房时间为11:00之前（见酒店信息文档）。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系_3d97505500f5f670",
+        "迪士尼乐园酒店信息_包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住__a4fc3f3b9baa8c8c"
+      ],
+      "retrieved_files": [
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+        "迪士尼乐园度假区客诉升级处理机制：何时需要将问题转给上级或特定部门（如：宾客关系部）.docx",
+        "迪士尼乐园酒店信息 包括各家迪士尼酒店的房型、定价、设施（泳池、健身房）、入住_退房政策和酒店宾客专属福利.docx"
+      ],
+      "retrieved_pages": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "retrieve_ms": 768.13,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
+      }
+    },
+    {
+      "id": "xdoc-school-vs-disney",
+      "question": "广东技术师范大学学生手册里的奖学金条款，会不会规定迪士尼客诉升级的Code G流程？",
+      "expected_doc_id": null,
+      "expected_filename": "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+      "expected_page_hint": 112,
+      "ground_truth": "不会。学生手册奖学金章节不涉及迪士尼Code G；Code G在客诉升级文档中。",
+      "hit_doc": true,
+      "hit_page": true,
+      "retrieved_doc_ids": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "附件7：广东技术师范大学学生手册（2023年3月版）_7f0531aa345ad07e",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788",
+        "offer先生春招求职一本通PDF_4ac566e05e6d6788"
+      ],
+      "retrieved_files": [
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "附件7：广东技术师范大学学生手册（2023年3月版）.pdf",
+        "offer先生春招求职一本通PDF.pdf",
+        "offer先生春招求职一本通PDF.pdf"
+      ],
+      "retrieved_pages": [
+        112,
+        5,
+        116,
+        152,
+        158
+      ],
+      "retrieve_ms": 649.31,
+      "generate_ms": 0.0,
+      "final_answer": "",
+      "mode": "hybrid_rerank",
+      "ragas": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 1.0,
+        "must_include_pass": null
       }
     }
   ],
