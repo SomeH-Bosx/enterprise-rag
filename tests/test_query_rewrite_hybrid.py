@@ -242,3 +242,41 @@ def test_rrf_fuse_still_prefers_overlap():
     d3 = Document(page_content="c", metadata={"chunk_id": "3"})
     fused = rrf_fuse([[d1, d2], [d2, d3]])
     assert fused[0].metadata["chunk_id"] == "2"
+    assert len(fused) == 3
+
+
+def test_hybrid_retrieve_truncates_rrf_to_recall_top_n(tmp_path: Path):
+    settings = _settings(tmp_path, USE_BM25=True, RETRIEVAL_MODE="hybrid")
+    bm25 = BM25Store(settings)
+    docs = [
+        Document(
+            page_content=f"bm25 unique token{i} scholarship",
+            metadata={"chunk_id": f"b{i}", "doc_id": f"db{i}", "filename": "b.pdf", "page": i},
+        )
+        for i in range(6)
+    ]
+    bm25.upsert_documents(docs)
+
+    class FakeVS:
+        def similarity_search_with_score(self, query, k=5, doc_ids=None):
+            dense = [
+                Document(
+                    page_content=f"dense unique vector{i}",
+                    metadata={"chunk_id": f"d{i}", "doc_id": f"dd{i}", "filename": "d.pdf", "page": i},
+                )
+                for i in range(6)
+            ]
+            return [(d, 0.1 * (i + 1)) for i, d in enumerate(dense[:k])]
+
+        def similarity_search(self, query, k=5, doc_ids=None):
+            return [d for d, _ in self.similarity_search_with_score(query, k=k, doc_ids=doc_ids)]
+
+    fused = hybrid_retrieve(
+        "scholarship",
+        FakeVS(),  # type: ignore[arg-type]
+        bm25,
+        settings=settings,
+        retrieval_mode="hybrid",
+        recall_top_n=4,
+    )
+    assert len(fused) == 4

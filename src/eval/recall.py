@@ -30,6 +30,49 @@ def recall_hit(
     )
 
 
+def citation_pairs(
+    retrieved_files: Sequence[str],
+    retrieved_pages: Sequence[Any],
+) -> list[tuple[str, int]]:
+    files = list(retrieved_files or [])
+    pages = list(retrieved_pages or [])
+    n = min(len(files), len(pages))
+    pairs: list[tuple[str, int]] = []
+    for i in range(n):
+        try:
+            pairs.append((str(files[i] or ""), int(pages[i])))
+        except (TypeError, ValueError):
+            continue
+    return pairs
+
+
+def strict_citation_hit(
+    *,
+    retrieved_files: Sequence[str],
+    retrieved_pages: Sequence[Any],
+    expected_filename: str | None,
+    expected_page: Any,
+) -> bool | None:
+    """True iff some retrieved (filename, page) matches expected filename+page.
+
+    Filename rule matches ``filename_hit`` (case-insensitive substring).
+    Returns None when the question has no page label (excluded from the rate).
+    """
+    if expected_page is None:
+        return None
+    if not expected_filename:
+        return False
+    try:
+        want = int(expected_page)
+    except (TypeError, ValueError):
+        return False
+    needle = expected_filename.lower().strip()
+    for filename, page in citation_pairs(retrieved_files, retrieved_pages):
+        if needle in filename.lower() and page == want:
+            return True
+    return False
+
+
 def aggregate_recall(hits: Iterable[bool]) -> dict[str, Any]:
     rows = list(hits)
     n = len(rows)

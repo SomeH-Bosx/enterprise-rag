@@ -152,13 +152,14 @@ def hybrid_retrieve(
         mode = resolve_retrieval_mode(cfg)
 
     if mode == "bm25":
-        return _bm25_with_scores(query, bm25_store, n, doc_ids)
+        return _bm25_with_scores(query, bm25_store, n, doc_ids)[:n]
 
     dense_docs = _dense_with_scores(query, vector_store, n, doc_ids)
     if mode == "dense":
-        return dense_docs
+        return dense_docs[:n]
 
     sparse_docs = bm25_store.search(query, k=n, doc_ids=doc_ids or None)
     if not sparse_docs:
-        return dense_docs
-    return rrf_fuse([dense_docs, sparse_docs])
+        return dense_docs[:n]
+    # RRF formula unchanged; cap fused list so candidate_count cannot exceed n.
+    return rrf_fuse([dense_docs, sparse_docs])[:n]

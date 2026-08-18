@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 
 from src.config.logging import setup_logging
 from src.config.settings import get_settings
-from src.eval.runner import run_eval
+from src.eval.runner import run_eval, run_rerank_ablation, refresh_ablation_reports_from_json, run_candidate_k_ablation
 from src.services.ingest_service import IngestService
 from src.services.qa_service import QAService
 
@@ -70,10 +70,69 @@ def ingest_dir(directory: Path):
     default=False,
     help="仅跑 Recall@K（不生成答案 / 不算 RAGAS-style）。",
 )
-def eval_cmd(questions: Path, report: Path, json_out: Path, skip_generation: bool):
+@click.option(
+    "--rerank-ablation",
+    is_flag=True,
+    default=False,
+    help="公平 Hybrid@20 消融：同一候选集上比较 RRF Top-5 vs Rerank Top-5（只测召回）。",
+)
+@click.option(
+    "--candidate-k-ablation",
+    is_flag=True,
+    default=False,
+    help="Hybrid@10/20/30 与 Hybrid@20+Rerank 的 candidate 宽度消融（只测召回，写入 candidate_k/）。",
+)
+def eval_cmd(
+    questions: Path,
+    report: Path,
+    json_out: Path,
+    skip_generation: bool,
+    rerank_ablation: bool,
+    candidate_k_ablation: bool,
+):
     """Phase5：Recall@K + RAGAS-style；写出 Markdown + JSON 报告。"""
+    if rerank_ablation and candidate_k_ablation:
+        raise click.UsageError("Use either --rerank-ablation or --candidate-k-ablation, not both.")
     settings = get_settings()
     qa = QAService(settings)
+    if candidate_k_ablation:
+        result = run_candidate_k_ablation(
+            questions,
+            qa_service=qa,
+            settings=settings,
+        )
+        click.echo(json.dumps(result["summary"]["recommendation"], ensure_ascii=False, indent=2))
+        click.echo(f"Summary Markdown: {result['summary']['summary_path']}")
+        if result["summary"].get("json_summary_path"):
+            click.echo(f"Summary JSON: {result['summary']['json_summary_path']}")
+        return
+    if rerank_ablation:
+        out_dir = ROOT / "evaluation" / "phase5"
+        result = run_rerank_ablation(
+            questions,
+            qa_service=qa,
+            settings=settings,
+            report_a=out_dir / "recall_hybrid20.md",
+            json_a=out_dir / "recall_hybrid20.json",
+            report_b=out_dir / "recall_hybrid20_rerank.md",
+            json_b=out_dir / "recall_hybrid20_rerank.json",
+        )
+        click.echo(
+            json.dumps(
+                {
+                    "candidates_identical": result["candidates_identical"],
+                    "A_hybrid20": result["A"]["metrics"],
+                    "B_hybrid20_rerank": result["B"]["metrics"],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        click.echo(f"A Markdown: {result['A']['report_path']}")
+        click.echo(f"A JSON: {result['A'].get('json_report_path')}")
+        click.echo(f"B Markdown: {result['B']['report_path']}")
+        click.echo(f"B JSON: {result['B'].get('json_report_path')}")
+        return
     result = run_eval(
         questions,
         report,
