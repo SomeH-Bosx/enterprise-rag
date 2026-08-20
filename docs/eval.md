@@ -2,6 +2,8 @@
 
 目标：用可重复指标证明 RAG 有效（Recall + RAGAS-style + 典型题集）。
 
+**服务默认配置（与生产/Demo 一致）：** Hybrid `RECALL_TOP_N=20` → Reranker `TOP_K=5` → **开启生成**（`RETRIEVAL_MODE=hybrid`，`USE_RERANKER=true`）。评测消融可临时改 Settings，不改变上述默认。
+
 ## 1. 准备样例索引
 
 确保 Ollama 已启动，并已 pull 模型。然后入库样例 PDF：

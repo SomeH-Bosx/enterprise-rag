@@ -3,7 +3,7 @@
 > 一句话：用本地 LLM + 向量检索，把企业内部文档变成可引用的智能问答服务。  
 > One-liner: Turn private enterprise documents into citable Q&A with local LLM + vector retrieval.
 
-**状态 / Status:** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · [Future Work](#11-future-work) 含 Phase6 等 
+**状态 / Status:** Phase1–Phase4 + Enhancement Step1–Step4 完成 · Phase5 Evaluation 完成 · 默认服务配置 **Hybrid@20 + Reranker(Top-5) + 本地生成** · [Future Work](#11-future-work)  
 **架构图 / Architecture:** [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · **评测 / Eval:** [`docs/eval.md`](docs/eval.md) · **Docker:** [`docs/docker.md`](docs/docker.md) · **演示:** [`docs/demo_script.md`](docs/demo_script.md)
 
 ---
@@ -31,9 +31,29 @@
 ## 1. 项目介绍
 
 企业知识分散在手册、规格书与 Office 文档中，通用聊天模型容易编造答案。  
-**Enterprise RAG** 提供私有化路径：多格式上传 → 向量入库 → 意图路由 →（可选改写 / Hybrid）检索重排 → 本地 LLM 生成，并返回**引用来源**与 Answer Trace，便于演示、审计与秋招作品集展示。
+**Enterprise RAG** 提供私有化路径：多格式上传 → 向量入库 → 意图路由 → Hybrid 检索 + 语义重排 → 本地 LLM 生成，并返回**引用来源**与 Answer Trace，便于演示、审计与作品集展示。
 
-当前样例评测（Recall@5，视本机索引而定）约 **91.7%**；详见 [`evaluation/phase5_report.md`](evaluation/phase5_report.md)。  
+**默认服务配置（Phase5 定稿）：**
+
+| 环节 | 默认 |
+| --- | --- |
+| Hybrid Retrieval | `candidate_k` / `RECALL_TOP_N` = **20** |
+| Reranker | `TOP_K` = **5**（`USE_RERANKER=true`） |
+| Generation | **开启**（Ollama 本地生成答案与引用） |
+
+### Retrieval Evaluation
+
+30 题离线召回评测（Top-5 计分；Strict Citation = `(filename, page)` 同时匹配）。完整说明见 [`docs/eval.md`](docs/eval.md)。
+
+| Configuration | Recall@5 | Strict Citation |
+| --- | --- | --- |
+| Hybrid@10 | 83.33% | 62.07% |
+| Hybrid@20 | 83.33% | 62.07% |
+| Hybrid@30 | 83.33% | 62.07% |
+| Hybrid@20 + Reranker | **86.67%** | **75.86%** |
+
+将 Hybrid 召回候选从 10 扩到 30，并未提升 Top-5 检索质量；加入 Reranker 后，Recall@5 从 83.33% 提升至 86.67%，严格引用命中率（filename + page）从 62.07% 提升至 75.86%。
+
 后续方向见下文 [Future Work](#11-future-work)。
 
 ## 2. 系统架构图
@@ -96,7 +116,7 @@ Query Router（规则 + LLM）
 | 主 UI | Demo | Streamlit Knowledge Workspace | `127.0.0.1` | `8501` | `http://127.0.0.1:8501` |
 | 薄客户端 | 非主路径 | Gradio | `127.0.0.1` | `7860` | `http://127.0.0.1:7860` |
 
-**检索口径简述：** `RETRIEVAL_MODE` 三选一——**Dense**（向量近邻）/ **BM25**（关键词）/ **Hybrid**（Dense+BM25 再 RRF）。宽召回 `RECALL_TOP_N=20` → Rerank 截断 `TOP_K=5` → LLM。BM25 **不是** Embedding 模型。
+**检索口径简述：** 默认 **`RETRIEVAL_MODE=hybrid`**：Dense + BM25 → RRF，宽召回 `RECALL_TOP_N=20` → Rerank 截断 `TOP_K=5` → **LLM 生成**。UI 仍可 Session 切换 Dense / BM25 / Hybrid。BM25 **不是** Embedding 模型。
 
 ## 4. 功能展示
 
@@ -140,10 +160,9 @@ ollama pull qwen2.5:7b
 ollama pull nomic-embed-text
 ```
 
-可选样例 PDF：
+可选样例文档入库（仓库已含中文样例时可直接）：
 
 ```bash
-python scripts/make_sample_pdfs.py
 python -m apps.cli.main ingest-dir data/samples
 ```
 
@@ -168,12 +187,12 @@ streamlit run apps/web/streamlit_app.py --server.port 8501
 见 [`docs/docker.md`](docs/docker.md)。评测见 [`docs/eval.md`](docs/eval.md)。
 
 ```bash
-curl -F "file=@data/samples/acme_employee_handbook.pdf" http://127.0.0.1:8000/upload
-
 curl -X POST http://127.0.0.1:8000/chat ^
   -H "Content-Type: application/json" ^
-  -d "{\"query\":\"公司的年假政策是什么？\"}"
+  -d "{\"query\":\"奖学金设置了哪些种类？\"}"
 ```
+
+（上传示例：将路径换成 `data/samples` 下实际存在的文件。）
 
 ## 6. 项目结构说明
 
@@ -195,13 +214,13 @@ enterprise-rag/
 
 ## 7. 技术亮点
 
+- **默认管线定稿**：Hybrid@20 → Reranker Top-5 → 本地生成（可引用答案）  
 - **Query Router**：知识库走检索链，闲聊直达 LLM  
-- **检索三模式**：Dense / BM25 / Hybrid(RRF)，Session UI 可切换  
-- **Rewrite + Memory**：换问法更稳；二者均可 Session 开关（关 Rewrite 后检索用原问 / 记忆拼接回退）  
-- **Reranker**：宽召回 → 语义重排 Top-K（DashScope，可回退）  
+- **检索三模式**：Dense / BM25 / Hybrid(RRF)，Session UI 可切换；服务默认 Hybrid  
+- **公平评测**：同候选 A/B 消融 + candidate_k∈{10,20,30}；结论是加宽召回不抬 Top-5，Rerank 抬 Recall 与严格引用  
+- **Rewrite + Memory**：换问法更稳；二者均可 Session 开关  
 - **Trace / Session 模型**：可解释、会话级覆盖不落盘密钥  
-- **评测闭环**：固定题集 + Recall@K + RAGAS-style 报告  
-- **本地优先**：生成与向量默认 Ollama  
+- **本地优先**：生成与向量默认 Ollama；Docker 可只容器化 API/UI  
 
 ## 8. API
 
@@ -221,11 +240,22 @@ enterprise-rag/
 全部通过 `.env` / 环境变量，由 `src/config/settings.py` 统一读取。  
 **禁止**在业务代码中硬编码 API Key。Session UI **不会**把 Key 写回 `.env`。
 
-常用变量：`OLLAMA_BASE_URL`、`LLM_MODEL`、`EMBED_MODEL`、`DASHSCOPE_API_KEY`、`RERANKER_BACKEND`、`RETRIEVAL_MODE`、`USE_BM25`、`USE_CONVERSATION_MEMORY`、`USE_QUERY_REWRITE`、`ENABLE_OCR` 等（见 `.env.example`）。
+**服务默认（与 Phase5 推荐一致）：**
+
+| 变量 | 默认 | 含义 |
+| --- | --- | --- |
+| `RETRIEVAL_MODE` | `hybrid` | Dense + BM25 + RRF |
+| `RECALL_TOP_N` | `20` | Hybrid 候选宽度 |
+| `TOP_K` | `5` | Rerank / 生成上下文条数 |
+| `USE_RERANKER` | `true` | 开启语义重排 |
+| `USE_BM25` | `true` | Hybrid 所需稀疏索引 |
+
+其他常用变量：`OLLAMA_BASE_URL`、`LLM_MODEL`、`EMBED_MODEL`、`DASHSCOPE_API_KEY`、`RERANKER_BACKEND`、`USE_CONVERSATION_MEMORY`、`USE_QUERY_REWRITE`、`ENABLE_OCR` 等（见 `.env.example`）。
 
 ## 10. 相关文档
 
 - [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) — 架构图  
+- [`docs/rag_pipeline_and_modules.md`](docs/rag_pipeline_and_modules.md) — Pipeline 与核心模块（理解 / 面试）  
 - [`docs/eval.md`](docs/eval.md) — 评测操作  
 - [`docs/docker.md`](docs/docker.md) — Docker / Ollama  
 - [`docs/demo_script.md`](docs/demo_script.md) — 演示脚本  
@@ -248,10 +278,24 @@ enterprise-rag/
 ## 1. Overview (EN)
 
 Enterprise documents should not be answered by hallucinating chatbots.  
-**Enterprise RAG** is a local-first service: multi-format ingest → route by intent → optional rewrite / hybrid retrieve + rerank → generate with Ollama → return **citable sources** and an Answer Trace.
+**Enterprise RAG** is a local-first service: multi-format ingest → route by intent → hybrid retrieve + rerank → generate with Ollama → return **citable sources** and an Answer Trace.
 
-**Status:** Phases 1–4 + Enhancement Steps 1–4 done · Phase5 Evaluation done · remaining items under [Future Work](#11-future-work-en).  
-Sample **Recall@5 ≈ 91.7%** (depends on your local index); see [`docs/eval.md`](docs/eval.md).
+**Default serving config (Phase5):** Hybrid retrieval `candidate_k=20` → Reranker `top_k=5` → **generation on**.
+
+### Retrieval Evaluation
+
+Offline recall on 30 questions (Top-5 scoring; Strict Citation = matched `(filename, page)`). See [`docs/eval.md`](docs/eval.md).
+
+| Configuration | Recall@5 | Strict Citation |
+| --- | --- | --- |
+| Hybrid@10 | 83.33% | 62.07% |
+| Hybrid@20 | 83.33% | 62.07% |
+| Hybrid@30 | 83.33% | 62.07% |
+| Hybrid@20 + Reranker | **86.67%** | **75.86%** |
+
+Increasing the hybrid retrieval candidate size from 10 to 30 did not improve Top-5 retrieval quality, while adding a reranker improved Recall@5 from 83.33% to 86.67% and strict citation hit rate from 62.07% to 75.86%.
+
+**Status:** Phases 1–4 + Enhancement Steps 1–4 done · Phase5 Evaluation done · remaining items under [Future Work](#11-future-work-en).
 
 ## 2. Architecture (EN)
 
@@ -289,7 +333,7 @@ Defaults from `.env.example`. Docker often uses `host.docker.internal:11434` for
 | Primary UI | Demo | Streamlit | `127.0.0.1` | `8501` | `http://127.0.0.1:8501` |
 | Thin client | Non-primary | Gradio | `127.0.0.1` | `7860` | `http://127.0.0.1:7860` |
 
-**Retrieval in one line:** `RETRIEVAL_MODE` = **Dense** | **BM25** | **Hybrid** (RRF) → Rerank (`TOP_K=5`) → LLM. BM25 is **not** an embedding model.
+**Retrieval in one line:** Default **`RETRIEVAL_MODE=hybrid`**: Dense + BM25 → RRF (`RECALL_TOP_N=20`) → Rerank (`TOP_K=5`) → LLM. Session UI can still switch Dense / BM25 / Hybrid. BM25 is **not** an embedding model.
 
 ## 4. Features (EN)
 
@@ -332,7 +376,7 @@ Host Ollama is recommended; see [`docs/docker.md`](docs/docker.md).
 
 ## 7. Highlights (EN)
 
-Observable RAG · Dense/BM25/Hybrid session switch · Memory + Rewrite toggles · Trace · session model overrides · reproducible Phase5 eval · local-first Ollama
+Default Hybrid@20 + Reranker Top-5 + local generation · fair Phase5 ablations (wider candidates do not lift Top-5; rerank does) · Dense/BM25/Hybrid session switch · Memory + Rewrite toggles · Trace · local-first Ollama
 
 ## 8. API
 
@@ -342,9 +386,11 @@ Same table as Chinese section. Chat: `{"query":"..."}` → `{"answer","sources",
 
 All secrets/paths/models via `.env` — no hardcoding; UI session overrides are memory-only.
 
+**Serving defaults:** `RETRIEVAL_MODE=hybrid`, `RECALL_TOP_N=20`, `TOP_K=5`, `USE_RERANKER=true`, `USE_BM25=true` (generation always on for `/chat`).
+
 ## 10. Docs (EN)
 
-[`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · [`docs/eval.md`](docs/eval.md) · [`docs/docker.md`](docs/docker.md) · [`docs/demo_script.md`](docs/demo_script.md) · [`docs/architecture_decisions.md`](docs/architecture_decisions.md) · [`docs/development_plan.md`](docs/development_plan.md)
+[`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md) · [`docs/rag_pipeline_and_modules.md`](docs/rag_pipeline_and_modules.md) · [`docs/eval.md`](docs/eval.md) · [`docs/docker.md`](docs/docker.md) · [`docs/demo_script.md`](docs/demo_script.md) · [`docs/architecture_decisions.md`](docs/architecture_decisions.md) · [`docs/development_plan.md`](docs/development_plan.md)
 
 ## 11. Future Work (EN)
 

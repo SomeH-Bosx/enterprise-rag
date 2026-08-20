@@ -232,7 +232,11 @@ def test_qa_uses_rewritten_for_retrieve_original_for_prompt(tmp_path: Path):
 
 
 def test_settings_field_defaults_for_step35():
-    assert Settings.model_fields["use_bm25"].default is False
+    assert Settings.model_fields["use_bm25"].default is True
+    assert Settings.model_fields["retrieval_mode"].default == "hybrid"
+    assert Settings.model_fields["recall_top_n"].default == 20
+    assert Settings.model_fields["top_k"].default == 5
+    assert Settings.model_fields["use_reranker"].default is True
     assert Settings.model_fields["use_query_rewrite"].default is True
 
 

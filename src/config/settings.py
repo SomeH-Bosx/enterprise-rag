@@ -45,10 +45,10 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=150, alias="CHUNK_OVERLAP")
     top_k: int = Field(default=5, alias="TOP_K")
     recall_top_n: int = Field(default=20, alias="RECALL_TOP_N")
-    # Phase2 enables reranker by default. BM25 Hybrid: implement but default OFF (Step3.5).
-    use_bm25: bool = Field(default=False, alias="USE_BM25")
+    # Default serving (Phase5): Hybrid recall_top_n=20 → Reranker top_k=5 → generation on.
+    use_bm25: bool = Field(default=True, alias="USE_BM25")
     # dense | bm25 | hybrid — empty means derive from USE_BM25 (true→hybrid, else dense).
-    retrieval_mode: str = Field(default="", alias="RETRIEVAL_MODE")
+    retrieval_mode: str = Field(default="hybrid", alias="RETRIEVAL_MODE")
     use_reranker: bool = Field(default=True, alias="USE_RERANKER")
     use_pdr: bool = Field(default=False, alias="USE_PDR")
     # Phase3 Query Router: classify intent before retrieval.
