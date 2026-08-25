@@ -273,6 +273,14 @@ enterprise-rag/
 
 ---
 
+## 许可证
+
+© 2026 [Bosx HUO](https://github.com/SomeH-Bosx)（[@SomeH-Bosx](https://github.com/SomeH-Bosx)）。保留所有权利。
+
+本项目为个人作品集，未经授权请勿用于商业用途或再分发。
+
+---
+
 # English
 
 ## 1. Overview (EN)
@@ -399,3 +407,8 @@ All secrets/paths/models via `.env` — no hardcoding; UI session overrides are 
 3. **Improve Query Rewrite strategy** and keep it product/UI-independent from Memory  
 4. **Try and compare alternative chunking strategies**  
 5. **Improve confidence scoring and presentation** so it is more calibrated and explainable  
+
+## License
+© 2026 [SomeH‑Bosx](https://github.com/SomeH-Bosx). All rights reserved.
+
+ This is a personal portfolio; commercial use and redistribution are prohibited without permission.
