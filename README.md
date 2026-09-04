@@ -136,7 +136,7 @@ Query Router（规则 + LLM）
 | 知识库上传 / 已索引文档 | ![Workspace upload](docs/demo/01_workspace_upload.png) |
 | 问答 + 引用来源 | ![Q&A with sources](docs/demo/02_qa_sources.png) |
 | Answer Trace / 置信度 | ![Answer Trace](docs/demo/03_answer_trace.png) |
-| Phase5 评测摘要 | ![Eval summary](docs/demo/04_eval_summary.png) |
+| Phase5 评测摘要 | ![Eval summary](docs\demo\04_eval_summary.png) |
 
 演示口述见 [`docs/demo_script.md`](docs/demo_script.md)。重截图（需本机 API+UI 已启动）：`python scripts/capture_demo_screenshots.py`（依赖可选 `playwright`）。
 

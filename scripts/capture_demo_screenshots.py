@@ -23,7 +23,8 @@ QUESTION = (
     "According to acme_employee_handbook.pdf, how many annual leave days "
     "do ACME full-time employees get?"
 )
-SUCCESS_MARKERS = ("15 days", "15 day", "15 天")
+# LLM may say "15 days" or "15 annual leave days" — accept either shape.
+SUCCESS_MARKERS = ("15 days", "15 day", "15 天", "15 annual", "15 annual leave")
 
 
 def _ensure_out() -> None:
@@ -38,16 +39,65 @@ def _api_ok() -> None:
         print(f"API ok · documents={len(docs)}")
 
 
+def _pct(rate: float) -> str:
+    return f"{rate * 100:.2f}%"
+
+
+def _load_readme_aligned_rows() -> tuple[list[dict[str, str]], str]:
+    """Rows matching README Retrieval Evaluation table (prefer candidate_k summary)."""
+    # Fallback = README documented numbers
+    defaults = [
+        {"name": "Hybrid@10", "recall": "83.33%", "strict": "62.07%", "hl": False},
+        {"name": "Hybrid@20", "recall": "83.33%", "strict": "62.07%", "hl": False},
+        {"name": "Hybrid@30", "recall": "83.33%", "strict": "62.07%", "hl": False},
+        {
+            "name": "Hybrid@20 + Reranker",
+            "recall": "86.67%",
+            "strict": "75.86%",
+            "hl": True,
+        },
+    ]
+    summary_path = ROOT / "evaluation" / "phase5" / "candidate_k" / "summary.json"
+    if not summary_path.exists():
+        return defaults, "docs/eval.md · README fallback"
+    data = json.loads(summary_path.read_text(encoding="utf-8"))
+    configs = data.get("configs") or []
+    by_key = {str(c.get("key") or ""): c for c in configs}
+    order = [
+        ("hybrid10", "Hybrid@10", False),
+        ("hybrid20", "Hybrid@20", False),
+        ("hybrid30", "Hybrid@30", False),
+        ("hybrid20_rerank", "Hybrid@20 + Reranker", True),
+    ]
+    rows: list[dict[str, str]] = []
+    for key, label, hl in order:
+        c = by_key.get(key)
+        if not c:
+            continue
+        rows.append(
+            {
+                "name": label,
+                "recall": _pct(float(c.get("recall_at_k") or 0)),
+                "strict": _pct(float(c.get("strict_citation_page_hit_rate") or 0)),
+                "hl": hl,
+            }
+        )
+    if len(rows) < 4:
+        return defaults, "docs/eval.md · README fallback"
+    return rows, "evaluation/phase5/candidate_k · 30 题"
+
+
 def _write_eval_card() -> Path:
-    """Static HTML card from phase5_report numbers (no RAG pipeline change)."""
-    report = ROOT / "evaluation" / "phase5_report.md"
-    text = report.read_text(encoding="utf-8") if report.exists() else ""
-    # Prefer JSON if present for stable numbers
-    jpath = ROOT / "evaluation" / "phase5_report.json"
-    metrics: dict = {}
-    if jpath.exists():
-        data = json.loads(jpath.read_text(encoding="utf-8"))
-        metrics = data.get("metrics") or data.get("summary") or data
+    """Static HTML card aligned with README Retrieval Evaluation table."""
+    rows, source = _load_readme_aligned_rows()
+    trs = []
+    for r in rows:
+        cls = ' class="hl"' if r.get("hl") else ""
+        trs.append(
+            f"<tr{cls}><td>{r['name']}</td>"
+            f"<td>{r['recall']}</td><td>{r['strict']}</td></tr>"
+        )
+    table_body = "\n      ".join(trs)
     html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -65,33 +115,41 @@ def _write_eval_card() -> Path:
     box-shadow: 0 8px 28px rgba(15,39,68,.06);
   }}
   h1 {{ margin: 0 0 6px; font-size: 1.45rem; letter-spacing: -0.02em; }}
-  .sub {{ color: #5a6b7d; font-size: 0.92rem; margin-bottom: 22px; }}
-  .grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }}
-  .metric {{
-    background: #f7f9fc; border: 1px solid #e2eaf2; border-radius: 10px;
-    padding: 14px 16px;
+  .sub {{ color: #5a6b7d; font-size: 0.92rem; margin-bottom: 18px; }}
+  table {{
+    width: 100%; border-collapse: collapse; font-size: 0.98rem;
   }}
-  .label {{ font-size: 0.75rem; text-transform: uppercase; letter-spacing: .06em; color: #3d5268; }}
-  .value {{ font-size: 1.55rem; font-weight: 700; margin-top: 4px; color: #0d7a4f; }}
-  .note {{ margin-top: 18px; font-size: 0.85rem; color: #6b7c8f; line-height: 1.45; }}
+  th, td {{
+    text-align: left; padding: 12px 14px; border-bottom: 1px solid #e2eaf2;
+  }}
+  th {{
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: .05em;
+    color: #3d5268; background: #f7f9fc;
+  }}
+  tr.hl td {{
+    font-weight: 700; color: #0d7a4f; background: #f0faf5;
+  }}
+  .note {{ margin-top: 18px; font-size: 0.85rem; color: #6b7c8f; line-height: 1.5; }}
   code {{ background: #e2eaf2; padding: 0.05rem 0.35rem; border-radius: 4px; }}
 </style>
 </head>
 <body>
   <div class="card">
     <h1>Enterprise RAG · Phase5 Evaluation</h1>
-    <div class="sub">样例题集可复现指标 · 详见 <code>evaluation/phase5_report.md</code></div>
-    <div class="grid">
-      <div class="metric"><div class="label">Recall@5</div><div class="value">91.67%</div></div>
-      <div class="metric"><div class="label">Context Precision</div><div class="value">0.92</div></div>
-      <div class="metric"><div class="label">Must-include Pass</div><div class="value">0.75</div></div>
-      <div class="metric"><div class="label">Faithfulness (lite)</div><div class="value">0.64</div></div>
-    </div>
+    <div class="sub">来源 <code>{source}</code></div>
+    <table>
+      <thead>
+        <tr><th>Configuration</th><th>Recall@5</th><th>Strict Citation</th></tr>
+      </thead>
+      <tbody>
+      {table_body}
+      </tbody>
+    </table>
     <p class="note">
-      12 题 · RAGAS-style 为仓库内轻量实现（非重型 ragas 包）。
-      Answer relevancy ≈ 0.61。Phase6 云模型 = Future Work。
+      30 题离线召回（Top-5 计分）；Strict Citation = <code>(filename, page)</code> 同时匹配。
+      Hybrid@10/20/30 召回质量相同；加入 Reranker 后 Recall@5 83.33%→86.67%，
+      严格引用 62.07%→75.86%。默认服务：Hybrid@20 + Reranker(Top-5)。详见 <code>docs/eval.md</code>。
     </p>
-    <!-- report excerpt length: {len(text)} · metrics keys: {list(metrics)[:8]} -->
   </div>
 </body>
 </html>
@@ -157,6 +215,133 @@ def _scroll_into_view(page, text: str) -> None:
             pass
 
 
+def _screenshot_answer_trace(page) -> Path:
+    """Capture full Answer Trace stack from the sidebar (query → retrieve → rerank → gen → conf)."""
+    page.set_viewport_size({"width": 900, "height": 2400})
+    time.sleep(0.5)
+    # Hide chrome above Trace; expand scroll containers so panels are not clipped
+    page.evaluate(
+        """() => {
+      const sidebar = document.querySelector('[data-testid="stSidebar"]');
+      if (!sidebar) return false;
+      let title = null;
+      for (const e of sidebar.querySelectorAll('p, div, span, h1, h2, h3, h4')) {
+        if ((e.textContent || '').trim() === '回答轨迹') {
+          title = e;
+          break;
+        }
+      }
+      if (!title) return false;
+
+      // Walk up to a block that is a direct vertical section, then hide previous siblings
+      let block = title;
+      for (let i = 0; i < 8 && block.parentElement; i++) {
+        const parent = block.parentElement;
+        if (parent === sidebar || parent.getAttribute('data-testid') === 'stSidebarContent') {
+          break;
+        }
+        // Prefer the Streamlit block/container that owns the Trace section
+        if (
+          parent.className &&
+          String(parent.className).includes('stVerticalBlock') &&
+          parent.parentElement
+        ) {
+          block = parent;
+        } else {
+          block = parent;
+        }
+      }
+
+      // Hide everything in the sidebar vertical flow before the Trace title's ancestor chain
+      const hideBefore = (root, stopEl) => {
+        const kids = [...root.children];
+        let found = false;
+        for (const kid of kids) {
+          if (kid.contains(stopEl) || kid === stopEl) {
+            found = true;
+            // Within this kid, hide earlier siblings of the path to stopEl
+            if (kid !== stopEl) hideBefore(kid, stopEl);
+            break;
+          }
+          kid.style.setProperty('display', 'none', 'important');
+        }
+        return found;
+      };
+      hideBefore(sidebar, title);
+
+      // Unclip overflow so full Trace paints
+      const all = [sidebar, ...sidebar.querySelectorAll('*')];
+      for (const el of all) {
+        const s = getComputedStyle(el);
+        if (s.overflowY === 'auto' || s.overflowY === 'scroll' || s.overflow === 'auto') {
+          el.style.setProperty('overflow', 'visible', 'important');
+          el.style.setProperty('max-height', 'none', 'important');
+          el.style.setProperty('height', 'auto', 'important');
+        }
+      }
+      sidebar.style.setProperty('overflow', 'visible', 'important');
+      sidebar.style.setProperty('height', 'auto', 'important');
+      sidebar.style.setProperty('max-height', 'none', 'important');
+      // Collapse main app area so viewport focuses sidebar
+      const main = document.querySelector('[data-testid="stAppViewContainer"] section.main');
+      if (main) main.style.setProperty('display', 'none', 'important');
+      return true;
+    }"""
+    )
+    time.sleep(0.8)
+    path = OUT / "03_answer_trace.png"
+    # Measure Trace content after hide/expand
+    box = page.evaluate(
+        """() => {
+      const sidebar = document.querySelector('[data-testid="stSidebar"]');
+      if (!sidebar) return null;
+      let title = null;
+      for (const e of sidebar.querySelectorAll('p, div, span')) {
+        if ((e.textContent || '').trim() === '回答轨迹') { title = e; break; }
+      }
+      const sb = sidebar.getBoundingClientRect();
+      const panels = [...sidebar.querySelectorAll('h4, [data-testid="stExpander"], .wk-panel')];
+      let bottom = title ? title.getBoundingClientRect().bottom : sb.bottom;
+      for (const el of panels) {
+        const r = el.getBoundingClientRect();
+        if (r.height > 0) bottom = Math.max(bottom, r.bottom);
+      }
+      // Also include last visible text nodes' containers
+      const texts = ['置信度', '生成', '重排', '检索', '查询分析', '原始 Trace'];
+      for (const t of texts) {
+        for (const e of sidebar.querySelectorAll('p, h4, div, span')) {
+          if ((e.textContent || '').trim().startsWith(t) || (e.textContent || '').trim() === t) {
+            bottom = Math.max(bottom, e.getBoundingClientRect().bottom);
+          }
+        }
+      }
+      const top = title ? Math.max(0, title.getBoundingClientRect().y - 12) : Math.max(0, sb.y);
+      return {
+        x: Math.max(0, sb.x),
+        y: top,
+        width: Math.min(Math.max(sb.width, 360), window.innerWidth - Math.max(0, sb.x)),
+        height: Math.min(Math.max(bottom - top + 32, 600), 2300),
+      };
+    }"""
+    )
+    if isinstance(box, dict) and float(box.get("width") or 0) > 10 and float(box.get("height") or 0) > 10:
+        page.screenshot(
+            path=str(path),
+            clip={
+                "x": float(box["x"]),
+                "y": float(box["y"]),
+                "width": float(box["width"]),
+                "height": float(box["height"]),
+            },
+        )
+    else:
+        page.locator('[data-testid="stSidebar"]').first.screenshot(path=str(path))
+    print(f"wrote {path.relative_to(ROOT)}")
+    # Reload to restore UI for subsequent steps
+    page.set_viewport_size({"width": 1440, "height": 900})
+    return path
+
+
 def main() -> int:
     _ensure_out()
     _api_ok()
@@ -207,11 +392,8 @@ def main() -> int:
         time.sleep(0.8)
         _screenshot(page, "02_qa_sources.png", full_page=False)
 
-        # 3) Trace: confidence formula + generation in sidebar
-        _scroll_into_view(page, "置信度")
-        _scroll_into_view(page, "生成")
-        time.sleep(0.8)
-        _screenshot(page, "03_answer_trace.png", full_page=False)
+        # 3) Trace: sidebar panels (查询分析 → 检索 → 重排 → 生成 → 置信度)
+        _screenshot_answer_trace(page)
 
         # 4) Eval summary card
         page.goto(eval_html.as_uri(), wait_until="domcontentloaded")
